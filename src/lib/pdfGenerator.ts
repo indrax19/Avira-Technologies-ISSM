@@ -975,6 +975,8 @@ export async function generateDeploymentCertificatePDF(
     ? "UQAAB – DEPLOYMENT CERTIFICATE"
     : certificateType === "issm"
     ? "ISSM – DEPLOYMENT CERTIFICATE"
+    : certificateType === "obsidian"
+    ? "UQAAB – DEPLOYMENT CERTIFICATE"
     : "DIGITAL EYE – DEPLOYMENT CERTIFICATE";
   doc.text(certTitle, pageWidth / 2, yPosition, { align: "center" });
   yPosition += 8;
@@ -1156,7 +1158,11 @@ yPosition += detailLineHeight;
 
   doc.setFont(undefined, "bold");
   doc.setFontSize(12);
-  const sectionTitle = certificateType === "uqaab" ? "Obsidian" : "ISSM Labelling Solutions";
+  const sectionTitle = certificateType === "uqaab"
+    ? "Uqaab"
+    : certificateType === "obsidian"
+    ? "Obsidian"
+    : "ISSM Labelling Solutions";
   doc.text(sectionTitle, margin, yPosition);
   yPosition += detailLineHeight;
 
