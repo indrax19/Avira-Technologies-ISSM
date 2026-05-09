@@ -877,7 +877,7 @@ export async function generateDeploymentCertificatePDF(
   profileId?: string,
   companyStampUrl?: string,
   companyLogoUrl?: string,
-  certificateType: "digital-eye" | "uqaab" = "digital-eye"
+  certificateType: "digital-eye" | "uqaab" | "issm" = "digital-eye"
 ): Promise<Blob> {
   const doc = new jsPDF({
     orientation: "portrait",
@@ -1227,7 +1227,7 @@ export async function downloadDeploymentCertificatePDF(
   companyStampUrl?: string,
   companyLogoUrl?: string,
   profileId?: string,
-  certificateType: "digital-eye" | "uqaab" = "digital-eye"
+  certificateType: "digital-eye" | "uqaab" | "issm" = "digital-eye"
 ) {
   try {
     const blob = await generateDeploymentCertificatePDF(
@@ -1266,7 +1266,7 @@ export async function printDeploymentCertificate(
   companyStampUrl?: string,
   companyLogoUrl?: string,
   profileId?: string,
-  certificateType: "digital-eye" | "uqaab" = "digital-eye"
+  certificateType: "digital-eye" | "uqaab" | "issm" = "digital-eye"
 ) {
   try {
     const blob = await generateDeploymentCertificatePDF(
