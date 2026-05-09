@@ -867,6 +867,7 @@ export async function downloadInvoicePDF(invoice: Invoice, profileId?: string) {
 export async function generateDeploymentCertificatePDF(
   companyName: string,
   siteAddress: string,
+  millName: string,
   clientName: string,
   clientDesignation: string,
   clientDate: string,
@@ -972,6 +973,8 @@ export async function generateDeploymentCertificatePDF(
   doc.setFont(undefined, "bold");
   const certTitle = certificateType === "uqaab"
     ? "UQAAB – DEPLOYMENT CERTIFICATE"
+    : certificateType === "issm"
+    ? "ISSM – DEPLOYMENT CERTIFICATE"
     : "DIGITAL EYE – DEPLOYMENT CERTIFICATE";
   doc.text(certTitle, pageWidth / 2, yPosition, { align: "center" });
   yPosition += 8;
@@ -1001,7 +1004,7 @@ export async function generateDeploymentCertificatePDF(
   doc.setFontSize(9);
 
   const details = [
-    ["Mill Name:", companyName],
+    ["Mill Name:", millName],
     ["Mill Location:", siteAddress],
     ["Name:", clientName],
     ["Designation:", clientDesignation],
@@ -1217,6 +1220,7 @@ yPosition += detailLineHeight;
 export async function downloadDeploymentCertificatePDF(
   companyName: string,
   siteAddress: string,
+  millName: string,
   clientName: string,
   clientDesignation: string,
   clientDate: string,
@@ -1233,6 +1237,7 @@ export async function downloadDeploymentCertificatePDF(
     const blob = await generateDeploymentCertificatePDF(
       companyName,
       siteAddress,
+      millName,
       clientName,
       clientDesignation,
       clientDate,
@@ -1256,6 +1261,7 @@ export async function downloadDeploymentCertificatePDF(
 export async function printDeploymentCertificate(
   companyName: string,
   siteAddress: string,
+  millName: string,
   clientName: string,
   clientDesignation: string,
   clientDate: string,
@@ -1272,6 +1278,7 @@ export async function printDeploymentCertificate(
     const blob = await generateDeploymentCertificatePDF(
       companyName,
       siteAddress,
+      millName,
       clientName,
       clientDesignation,
       clientDate,

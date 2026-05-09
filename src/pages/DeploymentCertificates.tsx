@@ -141,6 +141,7 @@ export default function DeploymentCertificates() {
       await downloadDeploymentCertificatePDF(
         selectedCertificate.company_name,
         selectedCertificate.site_address,
+        selectedCertificate.mill_name || "",
         selectedCertificate.client_name,
         selectedCertificate.client_designation,
         selectedCertificate.client_date,

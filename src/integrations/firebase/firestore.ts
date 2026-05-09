@@ -117,6 +117,7 @@ export interface DeploymentCertificate {
   site_id: string; // Reference to site_details
   company_name: string;
   site_address: string;
+  mill_name?: string; // Name of the mill/site
   client_name: string;
   client_designation: string;
   client_signature?: string;

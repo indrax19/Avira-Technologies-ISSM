@@ -246,6 +246,7 @@ export default function ProjectDetail() {
         site_id: selectedSiteForCert.id,
         company_name: project?.name || "",
         site_address: selectedSiteForCert.address || "",
+        mill_name: selectedSiteForCert.millName || "",
         certificate_type: data.certificate_type as "digital-eye" | "uqaab" | "issm",
         client_name: data.client_name,
         client_designation: data.client_designation,
@@ -273,6 +274,7 @@ export default function ProjectDetail() {
           await downloadDeploymentCertificatePDF(
             project?.name || "",
             selectedSiteForCert?.address || "",
+            selectedSiteForCert?.millName || "",
             certificateFormData.client_name,
             certificateFormData.client_designation,
             certificateFormData.client_date,
@@ -283,7 +285,7 @@ export default function ProjectDetail() {
             selectedProfile?.logo_url,
             selectedProfile?.logo_url,
             selectedCompanyProfile,
-            certificateFormData.certificate_type as "digital-eye" | "uqaab"
+            certificateFormData.certificate_type as "digital-eye" | "uqaab" | "issm"
           );
           toast.success("Certificate PDF downloaded!");
         } catch (error) {
