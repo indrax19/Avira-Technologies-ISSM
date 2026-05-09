@@ -246,7 +246,8 @@ export default function ProjectDetail() {
         site_id: selectedSiteForCert.id,
         company_name: project?.name || "",
         site_address: selectedSiteForCert.address || "",
-        certificate_type: data.certificate_type as "digital-eye" | "uqaab",
+        mill_name: selectedSiteForCert.millName || "",
+        certificate_type: data.certificate_type as "digital-eye" | "uqaab" | "issm",
         client_name: data.client_name,
         client_designation: data.client_designation,
         client_date: data.client_date,
@@ -273,6 +274,7 @@ export default function ProjectDetail() {
           await downloadDeploymentCertificatePDF(
             project?.name || "",
             selectedSiteForCert?.address || "",
+            selectedSiteForCert?.millName || "",
             certificateFormData.client_name,
             certificateFormData.client_designation,
             certificateFormData.client_date,
@@ -283,7 +285,7 @@ export default function ProjectDetail() {
             selectedProfile?.logo_url,
             selectedProfile?.logo_url,
             selectedCompanyProfile,
-            certificateFormData.certificate_type as "digital-eye" | "uqaab"
+            certificateFormData.certificate_type as "digital-eye" | "uqaab" | "issm"
           );
           toast.success("Certificate PDF downloaded!");
         } catch (error) {
@@ -1146,6 +1148,7 @@ export default function ProjectDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="digital-eye">Digital Eye</SelectItem>
+                    <SelectItem value="issm">ISSM</SelectItem>
                     <SelectItem value="obsidian">Obsidian</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1200,19 +1203,19 @@ export default function ProjectDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="issm-name" className="font-semibold text-gray-900">
-                    {certificateFormData.certificate_type === "obsidian" ? "Obsidian Name" : "Uqaab Name"}
+                    {certificateFormData.certificate_type === "obsidian" ? "Obsidian Name" : certificateFormData.certificate_type === "issm" ? "ISSM Name" : "Uqaab Name"}
                   </Label>
                   <Input
                     id="issm-name"
                     value={certificateFormData.issm_name}
                     onChange={(e) => setCertificateFormData({ ...certificateFormData, issm_name: e.target.value })}
                     className="border border-gray-300"
-                    placeholder={certificateFormData.certificate_type === "obsidian" ? "Enter Obsidian name" : "Enter Uqaab name"}
+                    placeholder={certificateFormData.certificate_type === "obsidian" ? "Enter Obsidian name" : certificateFormData.certificate_type === "issm" ? "Enter ISSM name" : "Enter Uqaab name"}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="issm-designation" className="font-semibold text-gray-900">
-                    {certificateFormData.certificate_type === "obsidian" ? "Obsidian Designation" : "Uqaab Designation"}
+                    {certificateFormData.certificate_type === "obsidian" ? "Obsidian Designation" : certificateFormData.certificate_type === "issm" ? "ISSM Designation" : "Uqaab Designation"}
                   </Label>
                   <Input
                     id="issm-designation"
@@ -1226,7 +1229,7 @@ export default function ProjectDetail() {
 
               <div className="space-y-2">
                 <Label htmlFor="issm-date" className="font-semibold text-gray-900">
-                  {certificateFormData.certificate_type === "obsidian" ? "Obsidian Date" : "Uqaab Date"}
+                  {certificateFormData.certificate_type === "obsidian" ? "Obsidian Date" : certificateFormData.certificate_type === "issm" ? "ISSM Date" : "Uqaab Date"}
                 </Label>
                 <Input
                   id="issm-date"
