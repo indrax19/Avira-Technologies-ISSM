@@ -1400,8 +1400,9 @@ export default function TechnicalProjectDetail() {
                   }
 
                   await downloadDeploymentCertificatePDF(
-                    selectedSiteForCert?.millName || "",
+                    selectedProfile?.company_name || "",
                     selectedSiteForCert?.millLocation || "",
+                    selectedSiteForCert?.millName || "",
                     certificateFormData.client_name,
                     certificateFormData.client_designation,
                     certificateFormData.client_date,
