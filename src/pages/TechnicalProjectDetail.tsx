@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, memo, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { BadgeCheck } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { technicalProjectsAPI } from "@/integrations/firebase/technicalProjectsAPI";
 import { siteDetailsAPI, type SiteDetails } from "@/integrations/firebase/siteDetailsAPI";
