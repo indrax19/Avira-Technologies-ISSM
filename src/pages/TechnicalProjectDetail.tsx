@@ -664,7 +664,7 @@ export default function TechnicalProjectDetail() {
                               }}
                               title="Add Deployment Certificate"
                             >
-                              <Download className="h-4 w-4" />
+                              <BadgeCheck className="h-4 w-4" />
                             </Button>
                             <div className="relative">
                               <Button
