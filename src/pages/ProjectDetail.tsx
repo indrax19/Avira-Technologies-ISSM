@@ -100,7 +100,7 @@ export default function ProjectDetail() {
   const getDefaultFormData = () => {
     const today = new Date().toISOString().split('T')[0];
     return {
-      certificate_type: "digital-eye",
+      certificate_type: "issm",
       client_name: "",
       client_designation: "",
       client_date: today,
