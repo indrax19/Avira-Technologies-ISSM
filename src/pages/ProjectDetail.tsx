@@ -69,6 +69,7 @@ const getFormDataWithSiteInfo = (site: any, defaultData: any) => {
     ...defaultData,
     client_name: site.pocName || "",
     issm_name: site.supervisorName || "",
+    issm_designation: "Deployment Administrator",
   };
 };
 
