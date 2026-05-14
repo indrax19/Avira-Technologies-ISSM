@@ -1147,7 +1147,6 @@ export default function ProjectDetail() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="digital-eye">Digital Eye</SelectItem>
                     <SelectItem value="issm">ISSM</SelectItem>
                     <SelectItem value="obsidian">Obsidian</SelectItem>
                   </SelectContent>
