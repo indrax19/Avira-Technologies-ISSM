@@ -28,7 +28,6 @@ export default function Scan() {
   const queryClient = useQueryClient();
   const { appUser } = useAuth();
   const manualInputRef = useRef<HTMLInputElement>(null);
-  const storeNamesUnsubRef = useRef<(() => void) | null>(null);
   const isMountedRef = useRef(true);
 
   const [mode, setMode] = useState<ScanMode>("add");
@@ -46,38 +45,12 @@ export default function Scan() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [foundItem, setFoundItem] = useState<any>(null);
   const [storeName, setStoreName] = useState("");
-  const [storeNames, setStoreNames] = useState<string[]>([]);
 
   // Track mounted state for cleanup
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-    };
-  }, []);
-
-  // Subscribe to store names from inventory items
-  useEffect(() => {
-    storeNamesUnsubRef.current = realtimeInventoryItemsAPI.subscribeAll(
-      (items) => {
-        if (!isMountedRef.current) return;
-        const stores = new Set<string>();
-        items.forEach((item) => {
-          if (item.store_name?.trim()) {
-            stores.add(item.store_name.trim());
-          }
-        });
-        setStoreNames(Array.from(stores).sort());
-      },
-      (error) => {
-        if (isMountedRef.current) {
-          console.error("Failed to load store names:", error);
-        }
-      }
-    );
-
-    return () => {
-      storeNamesUnsubRef.current?.();
     };
   }, []);
 
@@ -406,27 +379,17 @@ export default function Scan() {
 
             <div className="space-y-2">
               <Label htmlFor="store-name" className="font-semibold">Store Name *</Label>
-              <div className="relative">
-                <Input
-                  id="store-name"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="Enter store name"
-                  maxLength={200}
-                  list="store-suggestions-scan"
-                  className="text-sm"
-                />
-                <datalist id="store-suggestions-scan">
-                  {storeNames.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-              </div>
-              {storeNames.length > 0 && storeName && !storeNames.includes(storeName) && (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <span>⚠️</span> New store: "{storeName}"
-                </p>
-              )}
+              <Select value={storeName} onValueChange={setStoreName}>
+                <SelectTrigger id="store-name" className="text-sm">
+                  <SelectValue placeholder="Select a store" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Lahore">Lahore</SelectItem>
+                  <SelectItem value="Faisalabad">Faisalabad</SelectItem>
+                  <SelectItem value="Multan">Multan</SelectItem>
+                  <SelectItem value="Karachi">Karachi</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
