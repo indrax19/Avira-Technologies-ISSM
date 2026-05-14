@@ -638,6 +638,20 @@ export default function TechnicalProjectDetail() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-9 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                              onClick={() => {
+                                setSelectedSiteForCert(site);
+                                setCertificateFormData(getDefaultCertFormData());
+                                setShowCertificateDialog(true);
+                              }}
+                              title="Add Deployment Certificate"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add
+                            </Button>
                             <div className="relative">
                               <Button
                                 variant="ghost"
