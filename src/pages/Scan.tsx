@@ -406,26 +406,33 @@ export default function Scan() {
 
             <div className="space-y-2">
               <Label htmlFor="store-name" className="font-semibold">Store Name *</Label>
-              <div className="relative">
+              {storeNames.length > 0 ? (
+                <>
+                  <Select value={storeName} onValueChange={setStoreName}>
+                    <SelectTrigger id="store-name" className="text-sm">
+                      <SelectValue placeholder="Select a store" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {storeNames.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="text-xs text-muted-foreground">
+                    {storeNames.length} store{storeNames.length !== 1 ? "s" : ""} available
+                  </div>
+                </>
+              ) : (
                 <Input
                   id="store-name"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="Enter store name"
+                  placeholder="Enter store name (no stores in inventory yet)"
                   maxLength={200}
-                  list="store-suggestions-scan"
                   className="text-sm"
                 />
-                <datalist id="store-suggestions-scan">
-                  {storeNames.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-              </div>
-              {storeNames.length > 0 && storeName && !storeNames.includes(storeName) && (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <span>⚠️</span> New store: "{storeName}"
-                </p>
               )}
             </div>
           </div>
