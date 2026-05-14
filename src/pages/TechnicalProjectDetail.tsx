@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, memo, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { BadgeCheck } from "lucide-react";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { technicalProjectsAPI } from "@/integrations/firebase/technicalProjectsAPI";
 import { siteDetailsAPI, type SiteDetails } from "@/integrations/firebase/siteDetailsAPI";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { BadgeCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
