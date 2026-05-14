@@ -25,7 +25,7 @@ import { format, differenceInHours } from "date-fns";
 import { exportProjectTrackingToExcel } from "@/lib/excelExport";
 import { downloadProjectSitePDF } from "@/lib/pdfGenerator";
 import { BulkImportProjects } from "@/components/BulkImportProjects";
-import { CompanyProfileSelector } from "@/components/CompanyProfileSelector";
+import { ProjectProfileSelector } from "@/components/ProjectProfileSelector";
 import { companyProfileAPI, DeploymentCertificate } from "@/integrations/firebase/firestore";
 import { downloadDeploymentCertificatePDF } from "@/lib/pdfGenerator";
 
@@ -1098,7 +1098,7 @@ export default function ProjectDetail() {
       />
 
       {/* Company Profile Selector Dialog */}
-      <CompanyProfileSelector
+      <ProjectProfileSelector
         open={showProfileSelector}
         onOpenChange={setShowProfileSelector}
         onSelect={(profileId) => {
