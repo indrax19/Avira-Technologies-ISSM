@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRealtimeProject, useRealtimeSites } from "@/hooks/useProjectTracking";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -616,111 +617,111 @@ export default function ProjectDetail() {
                     const isRecent = isRecentlyModified(site, viewedSiteIds, appUser?.id);
 
                     return (
-                    <TableRow
-                      key={site.id}
-                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${isRecent ? "bg-blue-50" : ""}`}
-                    >
-                      <TableCell className="font-semibold text-gray-900 py-4">
-                        <div className="flex items-center gap-2">
-                          {site.millName || "—"}
-                          {updateStatus && (
-                            <Badge
-                              className="bg-green-100 text-green-800 border-green-300"
-                            >
-                              <Zap className="h-3 w-3 mr-1" />
-                              New
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-700 py-4">{site.city || "—"}</TableCell>
-                      <TableCell className="text-sm text-gray-700 py-4">{site.address || "—"}</TableCell>
-                      <TableCell className="text-sm text-gray-700 py-4">{site.unitNo || "—"}</TableCell>
-                      <TableCell className="py-4">
-                        <Badge className={`${getProjectStatusColor(site.projectStatus)} font-medium`}>
-                          {site.projectStatus || "—"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="space-y-1">
-                          <div className="font-medium text-gray-900">
-                            {site.pocName || "—"}
-                          </div>
-                          {site.pocPhone && (
-                            <div className="text-xs text-gray-600">
-                              {site.pocPhone}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600 py-4">
-                        {site.updated_at ? format(new Date(site.updated_at), "MMM d, yyyy HH:mm") : "—"}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2 w-32">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-blue-600 hover:bg-blue-100 hover:text-blue-700"
-                              onClick={() => {
-                                setViewSite(site);
-                                setViewedSiteIds(prev => new Set(prev).add(site.id));
-                              }}
-                              title="View Details"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-green-600 hover:bg-green-100 hover:text-green-700"
-                              onClick={() => {
-                                setSiteForDownload(site);
-                                setShowProfileSelector(true);
-                              }}
-                              title="Download PDF"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            {isUserAssigned && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-gray-600 hover:bg-gray-100 hover:text-gray-700"
-                                  onClick={() => navigate(`/project-sites/${site.id}/${id}`)}
-                                  title="Edit"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-600 hover:bg-red-100 hover:text-red-700"
-                                  onClick={() => handleDeleteSite(site.id!)}
-                                  title="Delete"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
+                      <TableRow
+                        key={site.id}
+                        className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${isRecent ? "bg-blue-50" : ""}`}
+                      >
+                        <TableCell className="font-semibold text-gray-900 py-4">
+                          <div className="flex items-center gap-2">
+                            {site.millName || "—"}
+                            {updateStatus && (
+                              <Badge
+                                className="bg-green-100 text-green-800 border-green-300"
+                              >
+                                <Zap className="h-3 w-3 mr-1" />
+                                New
+                              </Badge>
                             )}
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full gap-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                            onClick={() => {
-                              setSelectedSiteForCert(site);
-                              setCertificateFormData(getFormDataWithSiteInfo(site, getDefaultFormData()));
-                              setShowCertificateDialog(true);
-                            }}
-                          >
-                            <FileText className="h-4 w-4" /> Add
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-700 py-4">{site.city || "—"}</TableCell>
+                        <TableCell className="text-sm text-gray-700 py-4">{site.address || "—"}</TableCell>
+                        <TableCell className="text-sm text-gray-700 py-4">{site.unitNo || "—"}</TableCell>
+                        <TableCell className="py-4">
+                          <Badge className={`${getProjectStatusColor(site.projectStatus)} font-medium`}>
+                            {site.projectStatus || "—"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="space-y-1">
+                            <div className="font-medium text-gray-900">
+                              {site.pocName || "—"}
+                            </div>
+                            {site.pocPhone && (
+                              <div className="text-xs text-gray-600">
+                                {site.pocPhone}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600 py-4">
+                          {site.updated_at ? format(new Date(site.updated_at), "MMM d, yyyy HH:mm") : "—"}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2 w-32">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                onClick={() => {
+                                  setViewSite(site);
+                                  setViewedSiteIds(prev => new Set(prev).add(site.id));
+                                }}
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-green-600 hover:bg-green-100 hover:text-green-700"
+                                onClick={() => {
+                                  setSiteForDownload(site);
+                                  setShowProfileSelector(true);
+                                }}
+                                title="Download PDF"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              {isUserAssigned && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-gray-600 hover:bg-gray-100 hover:text-gray-700"
+                                    onClick={() => navigate(`/project-sites/${site.id}/${id}`)}
+                                    title="Edit"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600 hover:bg-red-100 hover:text-red-700"
+                                    onClick={() => handleDeleteSite(site.id!)}
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full gap-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              onClick={() => {
+                                setSelectedSiteForCert(site);
+                                setCertificateFormData(getFormDataWithSiteInfo(site, getDefaultFormData()));
+                                setShowCertificateDialog(true);
+                              }}
+                            >
+                              <BadgeCheck className="h-4 w-4" />Certificate
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 ) : (
