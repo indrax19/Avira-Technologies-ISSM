@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, memo, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { technicalProjectsAPI } from "@/integrations/firebase/technicalProjectsAPI";
 import { siteDetailsAPI, type SiteDetails } from "@/integrations/firebase/siteDetailsAPI";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { BadgeCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -507,11 +509,24 @@ export default function TechnicalProjectDetail() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                          onClick={() => {
+                            setSelectedSiteForCert(site);
+                            setCertificateFormData(getDefaultCertFormData());
+                            setShowCertificateDialog(true);
+                          }}
+                          title="Add Deployment Certificate"
+                        >
+                          <BadgeCheck className="h-4 w-4" />
+                        </Button>
                         <div className="relative">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-10 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                            className="w-full h-10 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                             onClick={() => setIssuesSiteId(site.id!)}
                             title={getIssuesButtonTitle(site)}
                             aria-label={getIssuesButtonTitle(site)}
@@ -536,7 +551,7 @@ export default function TechnicalProjectDetail() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="col-span-2 h-10 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
                           onClick={() => handleDeleteSite(site.id!)}
                           title="Delete"
                         >
@@ -638,12 +653,24 @@ export default function TechnicalProjectDetail() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-9 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                              onClick={() => {
+                                setSelectedSiteForCert(site);
+                                setCertificateFormData(getDefaultCertFormData());
+                                setShowCertificateDialog(true);
+                              }}
+                              title="Add Deployment Certificate"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
                             <div className="relative">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled // 👈 add this
-                                className="h-9 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                                className="w-full h-9 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                                 onClick={() => setIssuesSiteId(site.id!)}
                                 title={getIssuesButtonTitle(site)}
                                 aria-label={getIssuesButtonTitle(site)}
@@ -668,7 +695,7 @@ export default function TechnicalProjectDetail() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-9 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
+                              className="col-span-2 h-9 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
                               onClick={() => handleDeleteSite(site.id!)}
                               title="Delete"
                             >
@@ -1375,8 +1402,9 @@ export default function TechnicalProjectDetail() {
                   }
 
                   await downloadDeploymentCertificatePDF(
-                    selectedSiteForCert?.millName || "",
+                    selectedProfile?.company_name || "",
                     selectedSiteForCert?.millLocation || "",
+                    selectedSiteForCert?.millName || "",
                     certificateFormData.client_name,
                     certificateFormData.client_designation,
                     certificateFormData.client_date,
