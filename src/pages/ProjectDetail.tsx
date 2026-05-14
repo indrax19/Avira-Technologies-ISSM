@@ -115,6 +115,7 @@ export default function ProjectDetail() {
   const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
   const [selectedCompanyProfile, setSelectedCompanyProfile] = useState<string>("");
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [isSavingCert, setIsSavingCert] = useState(false);
 
   // Persist viewed sites to localStorage whenever they change
   useEffect(() => {
@@ -1250,14 +1251,36 @@ export default function ProjectDetail() {
                 setSelectedSiteForCert(null);
               }}
               className="border-gray-300 hover:bg-gray-50"
-              disabled={createCertificateMutation.isPending || isDownloadingCert}
+              disabled={createCertificateMutation.isPending || isDownloadingCert || isSavingCert}
             >
               Cancel
             </Button>
             <Button
+              onClick={() => {
+                setIsSavingCert(true);
+                if (selectedSiteForCert?.id) {
+                  saveCertificateFormData(selectedSiteForCert.id, certificateFormData);
+                }
+                setIsSavingCert(false);
+                toast.success("Certificate form saved successfully");
+              }}
+              variant="outline"
+              className="border-blue-300 hover:bg-blue-50 text-blue-600"
+              disabled={createCertificateMutation.isPending || isDownloadingCert || isSavingCert}
+            >
+              {isSavingCert ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Form"
+              )}
+            </Button>
+            <Button
               onClick={() => createCertificateMutation.mutate(certificateFormData)}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={createCertificateMutation.isPending || isDownloadingCert || !selectedCompanyProfile}
+              disabled={createCertificateMutation.isPending || isDownloadingCert || isSavingCert || !selectedCompanyProfile}
             >
               {createCertificateMutation.isPending || isDownloadingCert ? (
                 <>
