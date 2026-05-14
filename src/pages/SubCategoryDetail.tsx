@@ -648,12 +648,12 @@ export default function SubCategoryDetail() {
 
       {/* Add Items Dialog */}
       <Dialog open={addOpen} onOpenChange={(open) => !open && closeAddDialog()}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-md sm:w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-white dark:bg-slate-950 z-10 pb-4">
             <DialogTitle className="text-lg">Add Items to {subCategory?.name}</DialogTitle>
             <p className="text-xs text-muted-foreground mt-2">Choose how you want to add items to inventory</p>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 px-0">
             {/* Store Name Dropdown */}
             <div className="space-y-2">
               <Label className="font-semibold">Store Name *</Label>
@@ -746,7 +746,7 @@ export default function SubCategoryDetail() {
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-white dark:bg-slate-950 pt-4 mt-4 border-t gap-2 sm:gap-0">
             <Button variant="outline" onClick={closeAddDialog}>Cancel</Button>
             <Button onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>
               {addMutation.isPending ? "Adding..." : "Add Items"}
