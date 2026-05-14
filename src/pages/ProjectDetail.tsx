@@ -25,7 +25,7 @@ import { format, differenceInHours } from "date-fns";
 import { exportProjectTrackingToExcel } from "@/lib/excelExport";
 import { downloadProjectSitePDF } from "@/lib/pdfGenerator";
 import { BulkImportProjects } from "@/components/BulkImportProjects";
-import { CompanyProfileSelector } from "@/components/CompanyProfileSelector";
+import { ProjectProfileSelector } from "@/components/ProjectProfileSelector";
 import { companyProfileAPI, DeploymentCertificate } from "@/integrations/firebase/firestore";
 import { downloadDeploymentCertificatePDF } from "@/lib/pdfGenerator";
 
@@ -58,6 +58,19 @@ const loadCertificateFormData = (siteId: string) => {
   } catch {
     return null;
   }
+};
+
+const getFormDataWithSiteInfo = (site: any, defaultData: any) => {
+  const savedData = loadCertificateFormData(site.id);
+  if (savedData) {
+    return savedData;
+  }
+  return {
+    ...defaultData,
+    client_name: site.pocName || "",
+    issm_name: site.supervisorName || "",
+    issm_designation: "Deployment Administrator",
+  };
 };
 
 const saveCertificateFormData = (siteId: string, data: any) => {
@@ -100,7 +113,7 @@ export default function ProjectDetail() {
   const getDefaultFormData = () => {
     const today = new Date().toISOString().split('T')[0];
     return {
-      certificate_type: "digital-eye",
+      certificate_type: "issm",
       client_name: "",
       client_designation: "",
       client_date: today,
@@ -115,6 +128,7 @@ export default function ProjectDetail() {
   const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
   const [selectedCompanyProfile, setSelectedCompanyProfile] = useState<string>("");
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [isSavingCert, setIsSavingCert] = useState(false);
 
   // Persist viewed sites to localStorage whenever they change
   useEffect(() => {
@@ -698,8 +712,7 @@ export default function ProjectDetail() {
                             className="w-full gap-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                             onClick={() => {
                               setSelectedSiteForCert(site);
-                              const savedData = loadCertificateFormData(site.id);
-                              setCertificateFormData(savedData || getDefaultFormData());
+                              setCertificateFormData(getFormDataWithSiteInfo(site, getDefaultFormData()));
                               setShowCertificateDialog(true);
                             }}
                           >
@@ -854,8 +867,7 @@ export default function ProjectDetail() {
                           className="w-full gap-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                           onClick={() => {
                             setSelectedSiteForCert(site);
-                            const savedData = loadCertificateFormData(site.id);
-                            setCertificateFormData(savedData || getDefaultFormData());
+                            setCertificateFormData(getFormDataWithSiteInfo(site, getDefaultFormData()));
                             setShowCertificateDialog(true);
                           }}
                         >
@@ -1098,7 +1110,7 @@ export default function ProjectDetail() {
       />
 
       {/* Company Profile Selector Dialog */}
-      <CompanyProfileSelector
+      <ProjectProfileSelector
         open={showProfileSelector}
         onOpenChange={setShowProfileSelector}
         onSelect={(profileId) => {
@@ -1147,7 +1159,6 @@ export default function ProjectDetail() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="digital-eye">Digital Eye</SelectItem>
                     <SelectItem value="issm">ISSM</SelectItem>
                     <SelectItem value="obsidian">Obsidian</SelectItem>
                   </SelectContent>
@@ -1251,14 +1262,36 @@ export default function ProjectDetail() {
                 setSelectedSiteForCert(null);
               }}
               className="border-gray-300 hover:bg-gray-50"
-              disabled={createCertificateMutation.isPending || isDownloadingCert}
+              disabled={createCertificateMutation.isPending || isDownloadingCert || isSavingCert}
             >
               Cancel
             </Button>
             <Button
+              onClick={() => {
+                setIsSavingCert(true);
+                if (selectedSiteForCert?.id) {
+                  saveCertificateFormData(selectedSiteForCert.id, certificateFormData);
+                }
+                setIsSavingCert(false);
+                toast.success("Certificate form saved successfully");
+              }}
+              variant="outline"
+              className="border-blue-300 hover:bg-blue-50 text-blue-600"
+              disabled={createCertificateMutation.isPending || isDownloadingCert || isSavingCert}
+            >
+              {isSavingCert ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Form"
+              )}
+            </Button>
+            <Button
               onClick={() => createCertificateMutation.mutate(certificateFormData)}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={createCertificateMutation.isPending || isDownloadingCert || !selectedCompanyProfile}
+              disabled={createCertificateMutation.isPending || isDownloadingCert || isSavingCert || !selectedCompanyProfile}
             >
               {createCertificateMutation.isPending || isDownloadingCert ? (
                 <>

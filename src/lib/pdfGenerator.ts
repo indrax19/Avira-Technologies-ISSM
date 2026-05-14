@@ -1056,8 +1056,8 @@ export async function generateDeploymentCertificatePDF(
 doc.setFont("helvetica", "normal");
 doc.setFontSize(12);
 
-const systemName = certificateType === "uqaab" ? "Uqaab" : "Digital Eye";
-const systemFullName = certificateType === "uqaab" ? "Uqaab AI-Based Video Analytics System" : "Digital Eye AI-Based Video Analytics System";
+const systemName = certificateType === "uqaab" ? "Uqaab" : certificateType === "obsidian" ? "Uqaab" : "Digital Eye";
+const systemFullName = certificateType === "uqaab" ? "Uqaab AI-Based Video Analytics System" : certificateType === "obsidian" ? "Uqaab AI-Based Video Analytics System" : "Digital Eye AI-Based Video Analytics System";
 
 const certText =
   `This is to certify that the ${systemFullName} has been deployed at the undermentioned mill in accordance with the approved deployment scope of the relevant Sales Tax General Order and applicable regulatory requirements. The mentioned system, Electronic Monitoring of Production through Video Analytics, is operational.`;
