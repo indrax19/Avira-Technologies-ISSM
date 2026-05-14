@@ -60,6 +60,18 @@ const loadCertificateFormData = (siteId: string) => {
   }
 };
 
+const getFormDataWithSiteInfo = (site: any, defaultData: any) => {
+  const savedData = loadCertificateFormData(site.id);
+  if (savedData) {
+    return savedData;
+  }
+  return {
+    ...defaultData,
+    client_name: site.pocName || "",
+    issm_name: site.supervisorName || "",
+  };
+};
+
 const saveCertificateFormData = (siteId: string, data: any) => {
   try {
     localStorage.setItem(getCertificateFormStorageKey(siteId), JSON.stringify(data));
@@ -699,8 +711,7 @@ export default function ProjectDetail() {
                             className="w-full gap-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                             onClick={() => {
                               setSelectedSiteForCert(site);
-                              const savedData = loadCertificateFormData(site.id);
-                              setCertificateFormData(savedData || getDefaultFormData());
+                              setCertificateFormData(getFormDataWithSiteInfo(site, getDefaultFormData()));
                               setShowCertificateDialog(true);
                             }}
                           >
@@ -855,8 +866,7 @@ export default function ProjectDetail() {
                           className="w-full gap-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                           onClick={() => {
                             setSelectedSiteForCert(site);
-                            const savedData = loadCertificateFormData(site.id);
-                            setCertificateFormData(savedData || getDefaultFormData());
+                            setCertificateFormData(getFormDataWithSiteInfo(site, getDefaultFormData()));
                             setShowCertificateDialog(true);
                           }}
                         >
