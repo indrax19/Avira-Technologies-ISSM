@@ -510,7 +510,7 @@ export default function TechnicalProjectDetail() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-10 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                          className="h-9 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
                           onClick={() => {
                             setSelectedSiteForCert(site);
                             setCertificateFormData(getDefaultCertFormData());
@@ -518,7 +518,7 @@ export default function TechnicalProjectDetail() {
                           }}
                           title="Add Deployment Certificate"
                         >
-                          <Download className="h-4 w-4" />
+                          <BadgeCheck className="h-4 w-4" />
                         </Button>
                         <div className="relative">
                           <Button
