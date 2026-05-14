@@ -497,21 +497,34 @@ export default function TechnicalProjectDetail() {
                         </div>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div className="mt-4 flex flex-wrap gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                          className="flex-1 min-w-max h-10 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                           onClick={() => setSelectedSite(site)}
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <div className="relative">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 min-w-max h-10 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                          onClick={() => {
+                            setSelectedSiteForCert(site);
+                            setCertificateFormData(getDefaultCertFormData());
+                            setShowCertificateDialog(true);
+                          }}
+                          title="Add Deployment Certificate"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <div className="relative flex-1 min-w-max">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-10 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                            className="w-full h-10 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                             onClick={() => setIssuesSiteId(site.id!)}
                             title={getIssuesButtonTitle(site)}
                             aria-label={getIssuesButtonTitle(site)}
@@ -527,7 +540,7 @@ export default function TechnicalProjectDetail() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 rounded-lg border border-emerald-100 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                          className="flex-1 min-w-max h-10 rounded-lg border border-emerald-100 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                           onClick={() => navigate(`/technical-projects/${id}/sites/${site.id}`)}
                           title="Edit"
                         >
@@ -536,7 +549,7 @@ export default function TechnicalProjectDetail() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="flex-1 min-w-max h-10 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
                           onClick={() => handleDeleteSite(site.id!)}
                           title="Delete"
                         >
@@ -628,11 +641,11 @@ export default function TechnicalProjectDetail() {
                           {site.updated_at ? format(new Date(site.updated_at), "MMM d, yyyy 'at' h:mm a") : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="grid grid-cols-2 gap-2 w-fit justify-end">
+                          <div className="flex flex-nowrap gap-1.5 w-fit justify-end">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-9 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              className="h-9 w-9 p-0 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 hover:text-blue-700 flex-shrink-0"
                               onClick={() => setSelectedSite(site)}
                               title="View Details"
                             >
@@ -641,7 +654,7 @@ export default function TechnicalProjectDetail() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-9 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                              className="h-9 w-9 p-0 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 flex-shrink-0"
                               onClick={() => {
                                 setSelectedSiteForCert(site);
                                 setCertificateFormData(getDefaultCertFormData());
@@ -649,15 +662,13 @@ export default function TechnicalProjectDetail() {
                               }}
                               title="Add Deployment Certificate"
                             >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add
+                              <Plus className="h-4 w-4" />
                             </Button>
-                            <div className="relative">
+                            <div className="relative flex-shrink-0">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled // 👈 add this
-                                className="h-9 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                                className="h-9 w-9 p-0 rounded-lg border border-amber-100 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                                 onClick={() => setIssuesSiteId(site.id!)}
                                 title={getIssuesButtonTitle(site)}
                                 aria-label={getIssuesButtonTitle(site)}
@@ -673,7 +684,7 @@ export default function TechnicalProjectDetail() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-9 rounded-lg border border-emerald-100 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                              className="h-9 w-9 p-0 rounded-lg border border-emerald-100 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 flex-shrink-0"
                               onClick={() => navigate(`/technical-projects/${id}/sites/${site.id}`)}
                               title="Edit"
                             >
@@ -682,7 +693,7 @@ export default function TechnicalProjectDetail() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-9 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
+                              className="h-9 w-9 p-0 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 flex-shrink-0"
                               onClick={() => handleDeleteSite(site.id!)}
                               title="Delete"
                             >
