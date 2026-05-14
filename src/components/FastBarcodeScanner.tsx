@@ -57,6 +57,11 @@ export function FastBarcodeScanner({
     };
   }, []);
 
+  // Notify parent of scanned items changes
+  useEffect(() => {
+    onScannedItems(scannedItems);
+  }, [scannedItems, onScannedItems]);
+
   const playBeep = useCallback(() => {
     if (enableSound && audioRef.current) {
       try {
@@ -102,7 +107,6 @@ export function FastBarcodeScanner({
       setScannedItems((prev) => {
         const updated = [...prev, newItem];
         setLastScannedIndex(updated.length - 1);
-        onScannedItems(updated);
         return updated;
       });
 
@@ -132,7 +136,7 @@ export function FastBarcodeScanner({
       setManualInput("");
       inputRef.current?.focus();
     },
-    [scannedItems, existingSerialNumbers, fetchItemDetails, onScannedItems, playBeep]
+    [scannedItems, existingSerialNumbers, fetchItemDetails, playBeep]
   );
 
   const handleManualInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -143,11 +147,7 @@ export function FastBarcodeScanner({
   };
 
   const removeItem = (index: number) => {
-    setScannedItems((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      onScannedItems(updated);
-      return updated;
-    });
+    setScannedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleScan = (code: string) => {
@@ -204,7 +204,6 @@ export function FastBarcodeScanner({
               size="sm"
               onClick={() => {
                 setScannedItems([]);
-                onScannedItems([]);
               }}
               className="text-xs text-muted-foreground"
             >
