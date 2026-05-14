@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClickableAnydeskId from "@/components/ClickableAnydeskId";
 import ClickableRustdeskId from "@/components/ClickableRustdeskId";
 import {
@@ -38,6 +41,7 @@ import {
   ClipboardCheck,
   FileText,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportSiteDataToExcel } from "@/lib/excelExport";
@@ -46,6 +50,8 @@ import AddIssueDialog from "@/components/AddIssueDialog";
 import IssuesTable from "@/components/IssuesTable";
 import StatusUpdateDialog from "@/components/StatusUpdateDialog";
 import StatusHistoryPanel from "@/components/StatusHistoryPanel";
+import { companyProfileAPI, deploymentCertificateAPI, DeploymentCertificate } from "@/integrations/firebase/firestore";
+import { downloadDeploymentCertificatePDF } from "@/lib/pdfGenerator";
 
 const getDisplayValue = (value: ReactNode) => {
   if (value === undefined || value === null || value === "") return "—";
@@ -115,6 +121,12 @@ export default function TechnicalProjectDetail() {
   const [selectedIssueForStatus, setSelectedIssueForStatus] = useState<IssueWithDuration | null>(null);
   const [showStatusUpdateDialog, setShowStatusUpdateDialog] = useState(false);
   const [showStatusHistory, setShowStatusHistory] = useState(false);
+  const [showCertificateDialog, setShowCertificateDialog] = useState(false);
+  const [selectedSiteForCert, setSelectedSiteForCert] = useState<SiteDetails | null>(null);
+  const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
+  const [selectedCompanyProfile, setSelectedCompanyProfile] = useState<string>("");
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [isSavingCert, setIsSavingCert] = useState(false);
 
   const [project, setProject] = useState<any>(null);
   const [sites, setSites] = useState<SiteDetails[]>([]);
@@ -126,6 +138,22 @@ export default function TechnicalProjectDetail() {
 
   const projectUnsubRef = useRef<(() => void) | null>(null);
   const sitesUnsubRef = useRef<(() => void) | null>(null);
+
+  const getDefaultCertFormData = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      certificate_type: "issm",
+      client_name: "",
+      client_designation: "",
+      client_date: today,
+      deployment_date: today,
+      issm_name: "",
+      issm_designation: "",
+      issm_date: today,
+    };
+  };
+
+  const [certificateFormData, setCertificateFormData] = useState(getDefaultCertFormData());
 
   useEffect(() => {
     if (!id) return;
@@ -172,6 +200,22 @@ export default function TechnicalProjectDetail() {
       sitesUnsubRef.current?.();
     };
   }, [id, isAdmin, appUser, navigate]);
+
+  // Load company profiles
+  useEffect(() => {
+    const loadProfiles = async () => {
+      try {
+        const profiles = await companyProfileAPI.getAll();
+        setCompanyProfiles(profiles);
+        if (profiles.length > 0) {
+          setSelectedCompanyProfile(profiles[0].id || "");
+        }
+      } catch (error) {
+        console.log("Failed to load company profiles");
+      }
+    };
+    loadProfiles();
+  }, []);
 
   const deleteMutation = useMutation({
     mutationFn: async (siteId: string) => {
@@ -960,6 +1004,17 @@ export default function TechnicalProjectDetail() {
                   Close
                 </Button>
                 <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedSiteForCert(selectedSite);
+                    setCertificateFormData(getDefaultCertFormData());
+                    setShowCertificateDialog(true);
+                  }}
+                  className="flex-1 gap-2 border-blue-300 hover:bg-blue-50 text-blue-600"
+                >
+                  <FileText className="h-4 w-4" /> Deployment Certificates
+                </Button>
+                <Button
                   onClick={() => {
                     navigate(`/technical-projects/${id}/sites/${selectedSite.id}`);
                     setSelectedSite(null);
@@ -1137,6 +1192,229 @@ export default function TechnicalProjectDetail() {
           setSelectedIssueForStatus(null);
         }}
       />
+
+      {/* Create Certificate Dialog */}
+      <Dialog open={showCertificateDialog} onOpenChange={setShowCertificateDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-xl font-bold text-gray-900">Create Deployment Certificate</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm font-semibold text-gray-600">Site: <span className="text-gray-900">{selectedSiteForCert?.millName}</span></p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-semibold text-gray-900">Company Profile</Label>
+                <Select value={selectedCompanyProfile} onValueChange={setSelectedCompanyProfile}>
+                  <SelectTrigger className="border border-gray-300">
+                    <SelectValue placeholder="Select company profile" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyProfiles.length === 0 ? (
+                      <div className="p-2 text-sm text-gray-600">No company profiles available</div>
+                    ) : (
+                      companyProfiles.map((profile) => (
+                        <SelectItem key={profile.id} value={profile.id || ""}>
+                          {profile.company_name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-semibold text-gray-900">Certificate Type</Label>
+                <Select value={certificateFormData.certificate_type} onValueChange={(value) => setCertificateFormData({ ...certificateFormData, certificate_type: value })}>
+                  <SelectTrigger className="border border-gray-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="issm">ISSM</SelectItem>
+                    <SelectItem value="obsidian">Obsidian</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client-name" className="font-semibold text-gray-900">Client Name</Label>
+                  <Input
+                    id="client-name"
+                    value={certificateFormData.client_name}
+                    onChange={(e) => setCertificateFormData({ ...certificateFormData, client_name: e.target.value })}
+                    className="border border-gray-300"
+                    placeholder="Enter client name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client-designation" className="font-semibold text-gray-900">Client Designation</Label>
+                  <Input
+                    id="client-designation"
+                    value={certificateFormData.client_designation}
+                    onChange={(e) => setCertificateFormData({ ...certificateFormData, client_designation: e.target.value })}
+                    className="border border-gray-300"
+                    placeholder="e.g., Manager, Director"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client-date" className="font-semibold text-gray-900">Client Date</Label>
+                  <Input
+                    id="client-date"
+                    type="date"
+                    value={certificateFormData.client_date}
+                    onChange={(e) => setCertificateFormData({ ...certificateFormData, client_date: e.target.value })}
+                    className="border border-gray-300"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deployment-date" className="font-semibold text-gray-900">Deployment Date</Label>
+                  <Input
+                    id="deployment-date"
+                    type="date"
+                    value={certificateFormData.deployment_date}
+                    onChange={(e) => setCertificateFormData({ ...certificateFormData, deployment_date: e.target.value })}
+                    className="border border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="issm-name" className="font-semibold text-gray-900">
+                    {certificateFormData.certificate_type === "obsidian" ? "Obsidian Name" : certificateFormData.certificate_type === "issm" ? "ISSM Name" : "Uqaab Name"}
+                  </Label>
+                  <Input
+                    id="issm-name"
+                    value={certificateFormData.issm_name}
+                    onChange={(e) => setCertificateFormData({ ...certificateFormData, issm_name: e.target.value })}
+                    className="border border-gray-300"
+                    placeholder={certificateFormData.certificate_type === "obsidian" ? "Enter Obsidian name" : certificateFormData.certificate_type === "issm" ? "Enter ISSM name" : "Enter Uqaab name"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="issm-designation" className="font-semibold text-gray-900">
+                    {certificateFormData.certificate_type === "obsidian" ? "Obsidian Designation" : certificateFormData.certificate_type === "issm" ? "ISSM Designation" : "Uqaab Designation"}
+                  </Label>
+                  <Input
+                    id="issm-designation"
+                    value={certificateFormData.issm_designation}
+                    onChange={(e) => setCertificateFormData({ ...certificateFormData, issm_designation: e.target.value })}
+                    className="border border-gray-300"
+                    placeholder="e.g., Engineer, Supervisor"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="issm-date" className="font-semibold text-gray-900">
+                  {certificateFormData.certificate_type === "obsidian" ? "Obsidian Date" : certificateFormData.certificate_type === "issm" ? "ISSM Date" : "Uqaab Date"}
+                </Label>
+                <Input
+                  id="issm-date"
+                  type="date"
+                  value={certificateFormData.issm_date}
+                  onChange={(e) => setCertificateFormData({ ...certificateFormData, issm_date: e.target.value })}
+                  className="border border-gray-300"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCertificateDialog(false);
+                setCertificateFormData(getDefaultCertFormData());
+                setSelectedSiteForCert(null);
+              }}
+              className="border-gray-300 hover:bg-gray-50"
+              disabled={isDownloadingCert || isSavingCert}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsSavingCert(true);
+                if (selectedSiteForCert?.id) {
+                  toast.success("Certificate form saved successfully");
+                }
+                setIsSavingCert(false);
+              }}
+              variant="outline"
+              className="border-blue-300 hover:bg-blue-50 text-blue-600"
+              disabled={isDownloadingCert || isSavingCert}
+            >
+              {isSavingCert ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Form"
+              )}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!selectedCompanyProfile) {
+                  toast.error("Please select a company profile");
+                  return;
+                }
+                setIsDownloadingCert(true);
+                try {
+                  const selectedProfile = companyProfiles.find(p => p.id === selectedCompanyProfile);
+                  if (!selectedProfile) {
+                    toast.error("Company profile not found");
+                    return;
+                  }
+
+                  await downloadDeploymentCertificatePDF(
+                    selectedSiteForCert?.millName || "",
+                    selectedSiteForCert?.millLocation || "",
+                    certificateFormData.client_name,
+                    certificateFormData.client_designation,
+                    certificateFormData.client_date,
+                    certificateFormData.deployment_date,
+                    certificateFormData.issm_name,
+                    certificateFormData.issm_designation,
+                    certificateFormData.issm_date,
+                    selectedProfile?.logo_url,
+                    selectedProfile?.logo_url,
+                    selectedProfile?.id,
+                    certificateFormData.certificate_type
+                  );
+                  toast.success("Certificate PDF downloaded!");
+                  setShowCertificateDialog(false);
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to download certificate");
+                } finally {
+                  setIsDownloadingCert(false);
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={isDownloadingCert || isSavingCert || !selectedCompanyProfile}
+            >
+              {isDownloadingCert ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Create & Download
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
