@@ -74,7 +74,6 @@ export default function SubCategoryDetail() {
   const subCatUnsubRef = useRef<(() => void) | null>(null);
   const categoryUnsubRef = useRef<(() => void) | null>(null);
   const itemsUnsubRef = useRef<(() => void) | null>(null);
-  const storeNamesUnsubRef = useRef<(() => void) | null>(null);
   const isMountedRef = useRef(true);
 
   // Track mounted state for cleanup
@@ -151,30 +150,10 @@ export default function SubCategoryDetail() {
       }
     );
 
-    // Subscribe to all items to get store names
-    storeNamesUnsubRef.current = realtimeInventoryItemsAPI.subscribeAll(
-      (allItems) => {
-        if (!isMountedRef.current) return;
-        const stores = new Set<string>();
-        allItems.forEach((item) => {
-          if (item.store_name?.trim()) {
-            stores.add(item.store_name.trim());
-          }
-        });
-        setStoreNames(Array.from(stores).sort());
-      },
-      (error) => {
-        if (isMountedRef.current) {
-          console.error("Failed to load store names:", error);
-        }
-      }
-    );
-
     return () => {
       subCatUnsubRef.current?.();
       categoryUnsubRef.current?.();
       itemsUnsubRef.current?.();
-      storeNamesUnsubRef.current?.();
     };
   }, [id]);
 
@@ -675,28 +654,17 @@ export default function SubCategoryDetail() {
             {/* Store Name Dropdown */}
             <div className="space-y-2">
               <Label className="font-semibold">Store Name *</Label>
-              {storeNames.length > 0 ? (
-                <Select value={storeName} onValueChange={setStoreName}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Select a store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {storeNames.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="Enter store name (no stores in inventory yet)"
-                  maxLength={200}
-                  className="text-sm"
-                />
-              )}
+              <Select value={storeName} onValueChange={setStoreName}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Select a store" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Lahore">Lahore</SelectItem>
+                  <SelectItem value="Faisalabad">Faisalabad</SelectItem>
+                  <SelectItem value="Multan">Multan</SelectItem>
+                  <SelectItem value="Karachi">Karachi</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Supplier Name */}
