@@ -132,16 +132,15 @@ export default function ComplaintsTable({
   const getStatusBadge = (status: ComplaintStatus) => {
     const colorKey = STATUS_MAPPING[status];
     const colorConfig = colorKey ? STATUS_COLORS[colorKey] : null;
-    const option = STATUS_OPTIONS.find((opt) => opt.value === status);
 
-    if (!option || !colorConfig) {
+    if (!colorConfig) {
       return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
 
     return (
       <Badge className={colorConfig.badge}>
         <AlertCircle className="mr-1 h-3 w-3" />
-        {option.label}
+        {status}
       </Badge>
     );
   };
