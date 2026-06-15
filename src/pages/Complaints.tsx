@@ -116,7 +116,7 @@ export default function Complaints() {
     }
 
     try {
-      const timestamp = new Date().toISOString();
+      const selectedDateTime = new Date(formData.date).toISOString();
       const newComplaint: Complaint = {
         projectId: formData.projectId,
         siteId: formData.siteId,
@@ -125,14 +125,14 @@ export default function Complaints() {
         date: formData.date,
         createdBy: appUser?.id || "Unknown",
         createdByName: appUser?.fullName,
-        createdTime: timestamp,
+        createdTime: selectedDateTime,
         status: "Open",
         statusHistory: [
           {
             status: "Open",
             updatedBy: appUser?.id || "Unknown",
             updatedByName: appUser?.fullName,
-            timestamp,
+            timestamp: selectedDateTime,
             remarks: "Complaint created",
           },
         ],
