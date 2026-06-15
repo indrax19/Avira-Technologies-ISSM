@@ -120,7 +120,7 @@ const App = () => (
               <Route path="/project-sites/:siteId/:projectId" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectSiteForm /></Suspense></ProtectedRoute>} />
               <Route path="/knowledge-base" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><KnowledgeBase /></Suspense></ProtectedRoute>} />
               <Route path="/knowledge-base/:id" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><KnowledgeBaseDocumentView /></Suspense></ProtectedRoute>} />
-              <Route path="/complaints" element={<ProtectedRoute requiredPermission="sites"><Suspense fallback={<PageLoader />}><Complaints /></Suspense></ProtectedRoute>} />
+              <Route path="/complaints" element={<ProtectedRoute requiredPermission="complaints"><Suspense fallback={<PageLoader />}><Complaints /></Suspense></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute requiredPermission="reports"><Suspense fallback={<PageLoader />}><Reports /></Suspense></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute requiredPermission="transactions"><Suspense fallback={<PageLoader />}><Transactions /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute requiredPermission="settings"><Suspense fallback={<PageLoader />}><Settings /></Suspense></ProtectedRoute>} />

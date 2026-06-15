@@ -37,6 +37,7 @@ export const AVAILABLE_PERMISSIONS = [
   { id: "invoices", label: "Invoices", description: "Create and manage invoices" },
   { id: "sites", label: "Sites Details", description: "Manage site details and locations" },
   { id: "project-tracking", label: "Project Tracking", description: "Track and manage projects" },
+  { id: "complaints", label: "Complaints", description: "View and manage complaints & issues" },
   { id: "reports", label: "Reports", description: "View and generate reports" },
   { id: "settings", label: "Settings", description: "Configure company profile settings" },
   { id: "knowledge-base-upload", label: "Knowledge Base - Upload", description: "Upload and manage documents in knowledge base" },
