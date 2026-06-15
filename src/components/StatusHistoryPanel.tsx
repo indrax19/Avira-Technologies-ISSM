@@ -1,23 +1,21 @@
-import { StatusHistoryEntry, IssueStatus } from "@/integrations/firebase/issuesAPI";
+import { StatusHistoryEntry, ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { ChevronRight } from "lucide-react";
 
 interface StatusHistoryPanelProps {
   statusHistory?: StatusHistoryEntry[];
-  currentStatus?: IssueStatus;
+  currentStatus?: ComplaintStatus;
 }
 
-const STATUS_OPTIONS: { value: IssueStatus; label: string; color: string }[] = [
-  { value: "Open", label: "Open", color: "bg-yellow-100 text-yellow-800" },
-  { value: "In Progress", label: "In Progress", color: "bg-blue-100 text-blue-800" },
-  { value: "Pending", label: "Pending", color: "bg-orange-100 text-orange-800" },
-  { value: "Client Not Available", label: "Client Not Available", color: "bg-red-100 text-red-800" },
-  { value: "On Hold", label: "On Hold", color: "bg-purple-100 text-purple-800" },
+const STATUS_OPTIONS: { value: ComplaintStatus; label: string; color: string }[] = [
+  { value: "Open", label: "Open", color: "bg-blue-100 text-blue-800" },
+  { value: "In Progress", label: "In Progress", color: "bg-orange-100 text-orange-800" },
+  { value: "Pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
+  { value: "On Hold", label: "On Hold", color: "bg-gray-100 text-gray-800" },
   { value: "Resolved", label: "Resolved", color: "bg-green-100 text-green-800" },
 ];
 
-const getStatusColor = (status: IssueStatus): string => {
+const getStatusColor = (status: ComplaintStatus): string => {
   return STATUS_OPTIONS.find((opt) => opt.value === status)?.color || "bg-gray-100 text-gray-800";
 };
 
