@@ -41,6 +41,7 @@ const ProjectDetail = lazy(() => import("@/pages/ProjectDetail"));
 const ProjectSiteForm = lazy(() => import("@/pages/ProjectSiteForm"));
 const KnowledgeBase = lazy(() => import("@/pages/KnowledgeBase"));
 const KnowledgeBaseDocumentView = lazy(() => import("@/pages/KnowledgeBaseDocumentView"));
+const Complaints = lazy(() => import("@/pages/Complaints"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="/project-sites/:siteId/:projectId" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectSiteForm /></Suspense></ProtectedRoute>} />
               <Route path="/knowledge-base" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><KnowledgeBase /></Suspense></ProtectedRoute>} />
               <Route path="/knowledge-base/:id" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><KnowledgeBaseDocumentView /></Suspense></ProtectedRoute>} />
+              <Route path="/complaints" element={<ProtectedRoute requiredPermission="sites"><Suspense fallback={<PageLoader />}><Complaints /></Suspense></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute requiredPermission="reports"><Suspense fallback={<PageLoader />}><Reports /></Suspense></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute requiredPermission="transactions"><Suspense fallback={<PageLoader />}><Transactions /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute requiredPermission="settings"><Suspense fallback={<PageLoader />}><Settings /></Suspense></ProtectedRoute>} />

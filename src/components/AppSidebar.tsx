@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, Users, Truck, Settings, MapPin, Shield, CheckSquare, BookOpen, Receipt } from "lucide-react";
+import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, Users, Truck, Settings, MapPin, Shield, CheckSquare, BookOpen, Receipt, AlertCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +23,7 @@ const navItems = [
   { title: "Delivery Challans", url: "/delivery-challans", icon: Truck, permission: "delivery-challans" },
   { title: "Invoices", url: "/invoices", icon: Receipt, permission: "invoices" },
   { title: "Technical Details", url: "/sites", icon: MapPin, permission: "sites" },
+  { title: "Complaints", url: "/complaints", icon: AlertCircle, permission: "sites" },
   { title: "Projects Tracking", url: "/projects", icon: CheckSquare, permission: "project-tracking" },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
   { title: "Reports", url: "/reports", icon: FileText, permission: "reports" },
