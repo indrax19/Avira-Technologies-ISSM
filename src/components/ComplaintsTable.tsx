@@ -2,10 +2,8 @@ import { useState, useEffect, Fragment } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { AlertCircle, Edit2, Trash2, Loader2, ChevronDown, ChevronRight, X } from "lucide-react";
+import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import StatusHistoryPanel from "./StatusHistoryPanel";
 import { toast } from "sonner";
 import { ComplaintWithDetails } from "@/hooks/useComplaints";
@@ -31,8 +29,6 @@ interface ComplaintsTableProps {
   isAdmin?: boolean;
 }
 
-type StatusFilter = "All" | ComplaintStatus;
-
 const STATUS_MAPPING: Record<ComplaintStatus, keyof typeof STATUS_COLORS> = {
   "Open": "open",
   "In Progress": "in-progress",
@@ -41,14 +37,6 @@ const STATUS_MAPPING: Record<ComplaintStatus, keyof typeof STATUS_COLORS> = {
   "Resolved": "resolved",
 };
 
-const STATUS_OPTIONS: { value: ComplaintStatus; label: string }[] = [
-  { value: "Open", label: "Open" },
-  { value: "In Progress", label: "In Progress" },
-  { value: "Pending", label: "Pending" },
-  { value: "On Hold", label: "On Hold" },
-  { value: "Resolved", label: "Resolved" },
-];
-
 export default function ComplaintsTable({
   complaints,
   isLoading,
@@ -56,14 +44,10 @@ export default function ComplaintsTable({
   currentUserId,
   isAdmin,
 }: ComplaintsTableProps) {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userMap, setUserMap] = useState<Record<string, User | null>>({});
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [siteFilter, setSiteFilter] = useState("");
 
   const getLastUpdateUser = (complaint: ComplaintWithDetails): { name: string; timestamp: string } | null => {
     if (!complaint.statusHistory || complaint.statusHistory.length === 0) {
@@ -126,32 +110,6 @@ export default function ComplaintsTable({
     };
   }, [complaints]);
 
-  const filteredComplaints = complaints.filter((complaint) => {
-    // Status filter
-    if (statusFilter !== "All" && complaint.status !== statusFilter) {
-      return false;
-    }
-
-    // Date range filter
-    if (fromDate && new Date(complaint.date) < new Date(fromDate)) {
-      return false;
-    }
-    if (toDate && new Date(complaint.date) > new Date(toDate)) {
-      return false;
-    }
-
-    // Site name filter
-    if (siteFilter && !complaint.siteName?.toLowerCase().includes(siteFilter.toLowerCase())) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const getUniqueSites = () => {
-    const sites = new Set(complaints.map((c) => c.siteName).filter(Boolean));
-    return Array.from(sites).sort();
-  };
 
   const canDeleteComplaint = (complaint: ComplaintWithDetails): boolean => {
     if (isAdmin) return true;
@@ -212,97 +170,15 @@ export default function ComplaintsTable({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
-        {/* Status Filter */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <span className="text-sm font-semibold text-gray-700">Filter by Status:</span>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Complaints ({complaints.length})</SelectItem>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label} ({complaints.filter((c) => c.status === option.value).length})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Date Range and Site Filters */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-          {/* From Date */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">From Date</label>
-            <Input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="w-full sm:w-40"
-            />
-          </div>
-
-          {/* To Date */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">To Date</label>
-            <Input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="w-full sm:w-40"
-            />
-          </div>
-
-          {/* Site Name Filter */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Site Name</label>
-            <Select value={siteFilter} onValueChange={setSiteFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All Sites" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Sites</SelectItem>
-                {getUniqueSites().map((site) => (
-                  <SelectItem key={site} value={site}>
-                    {site}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Clear Filters Button */}
-          {(fromDate || toDate || siteFilter) && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setFromDate("");
-                setToDate("");
-                setSiteFilter("");
-              }}
-              className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
-            >
-              <X className="h-4 w-4" />
-              Clear Filters
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {filteredComplaints.length === 0 ? (
+      {complaints.length === 0 ? (
         <Card className="p-8 text-center">
           <AlertCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-          <p className="text-gray-600">No {statusFilter.toLowerCase()} complaints found</p>
+          <p className="text-gray-600">No complaints found</p>
         </Card>
       ) : (
         <>
           <div className="space-y-3 md:hidden">
-            {filteredComplaints.map((complaint) => {
+            {complaints.map((complaint) => {
               const isExpanded = expandedComplaintId === complaint.id;
               return (
                 <Card key={complaint.id} className="border border-slate-200 shadow-sm">
@@ -399,7 +275,7 @@ export default function ComplaintsTable({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComplaints.map((complaint) => {
+                  {complaints.map((complaint) => {
                     const isExpanded = expandedComplaintId === complaint.id;
                     return (
                       <Fragment key={complaint.id}>
