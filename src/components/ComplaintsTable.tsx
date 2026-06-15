@@ -218,12 +218,12 @@ export default function ComplaintsTable({
             </Select>
           </div>
 
-          {/* Project Name Search */}
+          {/* Site Name Search */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Project Name</label>
+            <label className="text-sm font-semibold text-gray-700">Site Name</label>
             <Input
               type="text"
-              placeholder="Search project..."
+              placeholder="Search site..."
               value={projectSearch}
               onChange={(e) => setProjectSearch(e.target.value)}
               className="w-full sm:w-48"
