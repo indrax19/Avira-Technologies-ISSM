@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, Edit2, Trash2, Loader2 } from "lucide-react";
+import { AlertCircle, Edit2, Trash2, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import StatusHistoryPanel from "./StatusHistoryPanel";
 import { toast } from "sonner";
 import { ComplaintWithDetails } from "@/hooks/useComplaints";
 import { complaintsAPI, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
@@ -54,6 +55,7 @@ export default function ComplaintsTable({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userMap, setUserMap] = useState<Record<string, User | null>>({});
+  const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -190,55 +192,80 @@ export default function ComplaintsTable({
       ) : (
         <>
           <div className="space-y-3 md:hidden">
-            {filteredComplaints.map((complaint) => (
-              <Card key={complaint.id} className="border border-slate-200 shadow-sm">
-                <div className="p-4 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900 break-words">{complaint.subject}</p>
-                      <p className="text-sm text-slate-600 mt-1 break-words">{complaint.description}</p>
-                      <div className="mt-3 text-xs space-y-1">
-                        <p className="text-slate-500"><span className="font-semibold">Project:</span> {complaint.projectName}</p>
-                        <p className="text-slate-500"><span className="font-semibold">Site:</span> {complaint.siteName}</p>
-                      </div>
+            {filteredComplaints.map((complaint) => {
+              const isExpanded = expandedComplaintId === complaint.id;
+              return (
+                <Card key={complaint.id} className="border border-slate-200 shadow-sm">
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        onClick={() => setExpandedComplaintId(isExpanded ? null : complaint.id!)}
+                        className="min-w-0 flex-1 text-left space-y-2 hover:opacity-75 transition-opacity"
+                      >
+                        <div className="flex items-start gap-2">
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
+                          )}
+                          <p className="font-semibold text-slate-900 break-words flex-1">{complaint.subject}</p>
+                        </div>
+                        <p className="text-sm text-slate-600 break-words">{complaint.description}</p>
+                      </button>
+                      {getStatusBadge(complaint.status)}
                     </div>
-                    {getStatusBadge(complaint.status)}
-                  </div>
 
-                  <div className="rounded-lg bg-slate-50 p-3 space-y-2 text-sm">
-                    <p className="text-slate-600">
-                      <span className="font-semibold">Created:</span> {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
-                    </p>
-                    <p className="text-slate-600">
-                      <span className="font-semibold">By:</span> {getUserName(complaint.createdBy)}
-                    </p>
-                  </div>
+                    <div className="rounded-lg bg-slate-50 p-3 space-y-2 text-sm">
+                      <p className="text-slate-600">
+                        <span className="font-semibold">Project:</span> {complaint.projectName}
+                      </p>
+                      <p className="text-slate-600">
+                        <span className="font-semibold">Site:</span> {complaint.siteName}
+                      </p>
+                      <p className="text-slate-600">
+                        <span className="font-semibold">Created:</span> {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
+                      </p>
+                      <p className="text-slate-600">
+                        <span className="font-semibold">By:</span> {getUserName(complaint.createdBy)}
+                      </p>
+                    </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {complaint.status !== "Resolved" && onStatusUpdateClick && (
+                    {isExpanded && (
+                      <div className="border-t border-slate-200 pt-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-3">Status History</p>
+                        <StatusHistoryPanel
+                          statusHistory={complaint.statusHistory}
+                          currentStatus={complaint.status}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {complaint.status !== "Resolved" && onStatusUpdateClick && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onStatusUpdateClick(complaint)}
+                          className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                        >
+                          <AlertCircle className="h-4 w-4" />
+                          Update Status
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => onStatusUpdateClick(complaint)}
-                        className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                        onClick={() => setDeleteConfirmId(complaint.id || "")}
+                        className="gap-2 border-red-200 text-red-700 hover:bg-red-50"
                       >
-                        <AlertCircle className="h-4 w-4" />
-                        Update Status
+                        <Trash2 className="h-4 w-4" />
+                        Delete
                       </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setDeleteConfirmId(complaint.id || "")}
-                      className="gap-2 border-red-200 text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
 
           <div className="hidden overflow-hidden rounded-lg border bg-white md:block">
@@ -256,47 +283,77 @@ export default function ComplaintsTable({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComplaints.map((complaint) => (
-                    <TableRow key={complaint.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="space-y-1 max-w-xs">
-                          <p className="font-medium text-gray-900 break-words">{complaint.subject}</p>
-                          <p className="text-xs text-gray-500 break-words">{complaint.description}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-700">{complaint.projectName}</TableCell>
-                      <TableCell className="text-sm text-gray-700">{complaint.siteName}</TableCell>
-                      <TableCell>{getStatusBadge(complaint.status)}</TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-700">{getUserName(complaint.createdBy)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {complaint.status !== "Resolved" && onStatusUpdateClick && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onStatusUpdateClick(complaint)}
-                              className="h-8 w-8 p-0 hover:bg-blue-100"
-                              title="Update Status"
+                  {filteredComplaints.map((complaint) => {
+                    const isExpanded = expandedComplaintId === complaint.id;
+                    return (
+                      <Fragment key={complaint.id}>
+                        <TableRow className="hover:bg-gray-50">
+                          <TableCell>
+                            <button
+                              onClick={() => setExpandedComplaintId(isExpanded ? null : complaint.id!)}
+                              className="w-full text-left hover:opacity-75 transition-opacity max-w-sm space-y-1 xl:max-w-md"
                             >
-                              <AlertCircle className="h-4 w-4 text-blue-600" />
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setDeleteConfirmId(complaint.id || "")}
-                            className="h-8 w-8 p-0 hover:bg-red-100"
-                            title="Delete Complaint"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              <div className="flex items-start gap-2">
+                                {isExpanded ? (
+                                  <ChevronDown className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                                )}
+                                <p className="font-medium text-gray-900 break-words flex-1">{complaint.subject}</p>
+                              </div>
+                              <p className="text-xs leading-5 text-gray-500 whitespace-pre-wrap break-words">
+                                {complaint.description}
+                              </p>
+                            </button>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-700">{complaint.projectName}</TableCell>
+                          <TableCell className="text-sm text-gray-700">{complaint.siteName}</TableCell>
+                          <TableCell>{getStatusBadge(complaint.status)}</TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-700">{getUserName(complaint.createdBy)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {complaint.status !== "Resolved" && onStatusUpdateClick && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => onStatusUpdateClick(complaint)}
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                  title="Update Status"
+                                >
+                                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setDeleteConfirmId(complaint.id || "")}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                title="Delete Complaint"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                            <TableCell colSpan={7} className="p-4">
+                              <div className="space-y-3">
+                                <p className="text-sm font-semibold text-gray-700">Status History & Timeline</p>
+                                <StatusHistoryPanel
+                                  statusHistory={complaint.statusHistory}
+                                  currentStatus={complaint.status}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

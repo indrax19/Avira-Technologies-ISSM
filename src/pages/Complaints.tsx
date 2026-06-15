@@ -84,7 +84,7 @@ export default function Complaints() {
   }, []);
 
   const filteredSites = formData.projectId
-    ? allSites.filter((site) => site.projectId === formData.projectId)
+    ? allSites.filter((site) => site.technical_project_id === formData.projectId)
     : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
