@@ -81,7 +81,15 @@ export default function Complaints() {
     return () => {
       projectsUnsubRef.current?.();
     };
-  }, []);
+  }, [appUser?.id]);
+
+  // Filter projects based on user access (admin sees all, regular users see only assigned ones)
+  const userAccessibleProjects = isAdmin
+    ? projects
+    : projects.filter((proj) =>
+        proj.assignedUsers?.includes(appUser?.id || "") ||
+        proj.assignedUsers?.includes(appUser?.email || "")
+      );
 
   const filteredSites = formData.projectId
     ? allSites.filter((site) => site.technical_project_id === formData.projectId)
@@ -146,8 +154,20 @@ export default function Complaints() {
     }
   };
 
-  const openComplaints = complaints.filter((c) => c.status !== "Resolved").length;
-  const resolvedComplaints = complaints.filter((c) => c.status === "Resolved").length;
+  // Filter complaints based on user's project access (admin sees all, regular users see only their project complaints)
+  const userAccessibleComplaintsIds = new Set<string>();
+  const userAccessibleProjectIds = new Set(
+    isAdmin
+      ? projects.map((p) => p.id)
+      : userAccessibleProjects.map((p) => p.id)
+  );
+
+  const userVisibleComplaints = complaints.filter((complaint) =>
+    isAdmin || userAccessibleProjectIds.has(complaint.projectId)
+  );
+
+  const openComplaints = userVisibleComplaints.filter((c) => c.status !== "Resolved").length;
+  const resolvedComplaints = userVisibleComplaints.filter((c) => c.status === "Resolved").length;
 
   if (isLoading) {
     return (
@@ -201,7 +221,7 @@ export default function Complaints() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">Total Complaints</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">{complaints.length}</p>
+                <p className="mt-2 text-3xl font-bold text-slate-900">{userVisibleComplaints.length}</p>
               </div>
               <div className="rounded-2xl bg-blue-100 p-3 text-blue-600">
                 <AlertCircle className="h-6 w-6" />
@@ -244,7 +264,7 @@ export default function Complaints() {
               <div>
                 <p className="text-sm font-medium text-slate-500">Completion Rate</p>
                 <p className="mt-2 text-3xl font-bold text-violet-700">
-                  {complaints.length > 0 ? Math.round((resolvedComplaints / complaints.length) * 100) : 0}%
+                  {userVisibleComplaints.length > 0 ? Math.round((resolvedComplaints / userVisibleComplaints.length) * 100) : 0}%
                 </p>
               </div>
               <div className="rounded-2xl bg-violet-100 p-3 text-violet-600">
@@ -256,8 +276,10 @@ export default function Complaints() {
       </div>
 
       <ComplaintsTable
-        complaints={complaints}
+        complaints={userVisibleComplaints}
         isLoading={complaintsLoading}
+        currentUserId={appUser?.id}
+        isAdmin={isAdmin}
         onStatusUpdateClick={(complaint) => {
           setSelectedComplaintForStatus(complaint);
           setShowStatusUpdateDialog(true);
@@ -290,10 +312,12 @@ export default function Complaints() {
                   <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects.length === 0 ? (
-                    <div className="p-2 text-sm text-gray-600">No projects available</div>
+                  {userAccessibleProjects.length === 0 ? (
+                    <div className="p-2 text-sm text-gray-600">
+                      {isAdmin ? "No projects available" : "You don't have access to any projects yet"}
+                    </div>
                   ) : (
-                    projects.map((proj) => (
+                    userAccessibleProjects.map((proj) => (
                       <SelectItem key={proj.id} value={proj.id || ""}>
                         {proj.name}
                       </SelectItem>

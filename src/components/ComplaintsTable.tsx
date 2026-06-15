@@ -26,6 +26,8 @@ interface ComplaintsTableProps {
   complaints: ComplaintWithDetails[];
   isLoading: boolean;
   onStatusUpdateClick?: (complaint: ComplaintWithDetails) => void;
+  currentUserId?: string;
+  isAdmin?: boolean;
 }
 
 type StatusFilter = "All" | ComplaintStatus;
@@ -50,6 +52,8 @@ export default function ComplaintsTable({
   complaints,
   isLoading,
   onStatusUpdateClick,
+  currentUserId,
+  isAdmin,
 }: ComplaintsTableProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -110,6 +114,11 @@ export default function ComplaintsTable({
   const filteredComplaints = statusFilter === "All"
     ? complaints
     : complaints.filter((complaint) => complaint.status === statusFilter);
+
+  const canDeleteComplaint = (complaint: ComplaintWithDetails): boolean => {
+    if (isAdmin) return true;
+    return complaint.createdBy === currentUserId;
+  };
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -252,15 +261,17 @@ export default function ComplaintsTable({
                           Update Status
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setDeleteConfirmId(complaint.id || "")}
-                        className="gap-2 border-red-200 text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
+                      {canDeleteComplaint(complaint) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteConfirmId(complaint.id || "")}
+                          className="gap-2 border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -279,6 +290,7 @@ export default function ComplaintsTable({
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Created</TableHead>
                     <TableHead className="font-semibold">Created By</TableHead>
+                    <TableHead className="font-semibold">Resolved By</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -313,6 +325,7 @@ export default function ComplaintsTable({
                             {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
                           </TableCell>
                           <TableCell className="text-sm text-gray-700">{getUserName(complaint.createdBy)}</TableCell>
+                          <TableCell className="text-sm text-gray-700">{getUserName(complaint.resolvedBy)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               {complaint.status !== "Resolved" && onStatusUpdateClick && (
@@ -326,21 +339,23 @@ export default function ComplaintsTable({
                                   <AlertCircle className="h-4 w-4 text-blue-600" />
                                 </Button>
                               )}
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setDeleteConfirmId(complaint.id || "")}
-                                className="h-8 w-8 p-0 hover:bg-red-100"
-                                title="Delete Complaint"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
+                              {canDeleteComplaint(complaint) && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setDeleteConfirmId(complaint.id || "")}
+                                  className="h-8 w-8 p-0 hover:bg-red-100"
+                                  title="Delete Complaint"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
                         {isExpanded && (
                           <TableRow className="bg-gray-50 hover:bg-gray-50">
-                            <TableCell colSpan={7} className="p-4">
+                            <TableCell colSpan={8} className="p-4">
                               <div className="space-y-3">
                                 <p className="text-sm font-semibold text-gray-700">Status History & Timeline</p>
                                 <StatusHistoryPanel
