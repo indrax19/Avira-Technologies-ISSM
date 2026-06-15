@@ -48,7 +48,7 @@ const PageLoader = () => (
   <Card className="mt-8">
     <CardContent className="flex flex-col items-center justify-center py-12">
       <div className="space-y-3 text-center">
-        <div className="h-8 w-8 mx-auto border-4 border-muted border-t-primary rounded-full animate-spin"></div>
+        <img src="/avira-logo.webp" alt="Avira Technologies" className="h-12 w-auto mx-auto mb-4 animate-pulse" />
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </CardContent>
