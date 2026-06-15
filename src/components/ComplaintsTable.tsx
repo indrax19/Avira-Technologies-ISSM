@@ -61,6 +61,17 @@ export default function ComplaintsTable({
   const [userMap, setUserMap] = useState<Record<string, User | null>>({});
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
 
+  const getLastUpdateUser = (complaint: ComplaintWithDetails): { name: string; timestamp: string } | null => {
+    if (!complaint.statusHistory || complaint.statusHistory.length === 0) {
+      return null;
+    }
+    const lastEntry = complaint.statusHistory[complaint.statusHistory.length - 1];
+    return {
+      name: lastEntry.updatedByName || getUserName(lastEntry.updatedBy),
+      timestamp: lastEntry.timestamp,
+    };
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -237,6 +248,9 @@ export default function ComplaintsTable({
                       <p className="text-slate-600">
                         <span className="font-semibold">By:</span> {getUserName(complaint.createdBy)}
                       </p>
+                      <p className="text-slate-600">
+                        <span className="font-semibold">Last Update By:</span> {getLastUpdateUser(complaint)?.name || "—"}
+                      </p>
                     </div>
 
                     {isExpanded && (
@@ -290,6 +304,7 @@ export default function ComplaintsTable({
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Created</TableHead>
                     <TableHead className="font-semibold">Created By</TableHead>
+                    <TableHead className="font-semibold">Last Update By</TableHead>
                     <TableHead className="font-semibold">Resolved By</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
@@ -325,6 +340,9 @@ export default function ComplaintsTable({
                             {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
                           </TableCell>
                           <TableCell className="text-sm text-gray-700">{getUserName(complaint.createdBy)}</TableCell>
+                          <TableCell className="text-sm text-gray-700">
+                            {getLastUpdateUser(complaint)?.name || "—"}
+                          </TableCell>
                           <TableCell className="text-sm text-gray-700">{getUserName(complaint.resolvedBy)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -355,7 +373,7 @@ export default function ComplaintsTable({
                         </TableRow>
                         {isExpanded && (
                           <TableRow className="bg-gray-50 hover:bg-gray-50">
-                            <TableCell colSpan={8} className="p-4">
+                            <TableCell colSpan={9} className="p-4">
                               <div className="space-y-3">
                                 <p className="text-sm font-semibold text-gray-700">Status History & Timeline</p>
                                 <StatusHistoryPanel

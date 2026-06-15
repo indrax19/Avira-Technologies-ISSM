@@ -53,8 +53,13 @@ export default function ComplaintStatusUpdateDialog({
       return;
     }
 
-    if (newStatus === complaint.status && !remarks.trim()) {
-      toast.error("Please select a different status or add remarks");
+    if (!remarks.trim()) {
+      toast.error("Remarks is compulsory");
+      return;
+    }
+
+    if (newStatus === complaint.status) {
+      toast.error("Please select a different status");
       return;
     }
 
@@ -134,7 +139,7 @@ export default function ComplaintStatusUpdateDialog({
           {/* Remarks */}
           <div className="space-y-2">
             <Label htmlFor="remarks" className="font-semibold">
-              Remarks / Notes
+              Remarks / Notes *
             </Label>
             <Textarea
               id="remarks"
