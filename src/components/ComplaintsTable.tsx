@@ -61,7 +61,7 @@ export default function ComplaintsTable({
   const [userMap, setUserMap] = useState<Record<string, User | null>>({});
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
-  const [projectSearch, setProjectSearch] = useState("");
+  const [siteSearch, setSiteSearch] = useState("");
 
   const getLastUpdateUser = (complaint: ComplaintWithDetails): { name: string; timestamp: string } | null => {
     if (!complaint.statusHistory || complaint.statusHistory.length === 0) {
@@ -170,8 +170,8 @@ export default function ComplaintsTable({
       return false;
     }
 
-    // Project name search
-    if (projectSearch && !complaint.projectName?.toLowerCase().includes(projectSearch.toLowerCase())) {
+    // Site name search
+    if (siteSearch && !complaint.siteName?.toLowerCase().includes(siteSearch.toLowerCase())) {
       return false;
     }
 
@@ -224,20 +224,20 @@ export default function ComplaintsTable({
             <Input
               type="text"
               placeholder="Search site..."
-              value={projectSearch}
-              onChange={(e) => setProjectSearch(e.target.value)}
+              value={siteSearch}
+              onChange={(e) => setSiteSearch(e.target.value)}
               className="w-full sm:w-48"
             />
           </div>
 
           {/* Clear Filters Button */}
-          {(statusFilter !== "All" || projectSearch) && (
+          {(statusFilter !== "All" || siteSearch) && (
             <Button
               size="sm"
               variant="outline"
               onClick={() => {
                 setStatusFilter("All");
-                setProjectSearch("");
+                setSiteSearch("");
               }}
               className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 w-full sm:w-auto"
             >
