@@ -254,7 +254,7 @@ export default function TechnicalProjectDetail() {
 
   const openIssueCountsBySite = useMemo(() => {
     return allIssues.reduce<Record<string, number>>((counts, issue) => {
-      if (issue.status === "Open" && issue.site_id) {
+      if (issue.status !== "Resolved" && issue.site_id) {
         counts[issue.site_id] = (counts[issue.site_id] || 0) + 1;
       }
       return counts;
@@ -264,8 +264,8 @@ export default function TechnicalProjectDetail() {
   const getIssuesButtonTitle = (site: SiteDetails) => {
     const openIssueCount = site.id ? openIssueCountsBySite[site.id] || 0 : 0;
     return openIssueCount > 0
-      ? `View Issues (${openIssueCount} open)`
-      : "View Issues (no open issues)";
+      ? `View Issues (${openIssueCount} pending)`
+      : "View Issues (no pending issues)";
   };
 
   const renderChecklistBadge = (value?: boolean) => (

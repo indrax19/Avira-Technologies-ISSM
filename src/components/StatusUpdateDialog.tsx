@@ -135,16 +135,27 @@ export default function StatusUpdateDialog({
         await Promise.all(notificationPromises);
 
         // Send push notifications
-        if (userIds.length > 0 && selectedStatus === "Resolved") {
+        if (userIds.length > 0) {
           try {
-            await pushNotificationAPI.notifyIssueResolved(
-              issue.id,
-              siteName,
-              issue.site_id,
-              issue.title,
-              appUser?.id || "Unknown",
-              userIds
-            );
+            if (selectedStatus === "Resolved") {
+              await pushNotificationAPI.notifyIssueResolved(
+                issue.id,
+                siteName,
+                issue.site_id,
+                issue.title,
+                appUser?.id || "Unknown",
+                userIds
+              );
+            } else {
+              await pushNotificationAPI.notifyIssueUpdated(
+                issue.id,
+                siteName,
+                issue.site_id,
+                issue.title,
+                appUser?.id || "Unknown",
+                userIds
+              );
+            }
           } catch (pushError) {
             console.warn("Failed to send push notifications:", pushError);
           }

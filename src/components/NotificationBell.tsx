@@ -19,7 +19,7 @@ interface CombinedNotification {
   message: string;
   timestamp: Date;
   isRead: boolean;
-  icon: 'activity' | 'issue_created' | 'issue_resolved';
+  icon: 'activity' | 'issue_created' | 'issue_resolved' | 'issue_updated';
 }
 
 export function NotificationBell() {
@@ -113,7 +113,7 @@ export function NotificationBell() {
       message: n.message,
       timestamp: new Date(n.createdAt),
       isRead: n.isRead,
-      icon: n.type as 'issue_created' | 'issue_resolved',
+      icon: n.type as 'issue_created' | 'issue_resolved' | 'issue_updated',
     })),
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
@@ -148,6 +148,8 @@ export function NotificationBell() {
       return <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />;
     } else if (icon === 'issue_resolved') {
       return <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />;
+    } else if (icon === 'issue_updated') {
+      return <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />;
     }
     return null;
   };
