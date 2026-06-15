@@ -3,7 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight, X } from "lucide-react";
 import StatusHistoryPanel from "./StatusHistoryPanel";
 import { toast } from "sonner";
 import { ComplaintWithDetails } from "@/hooks/useComplaints";
@@ -37,6 +39,16 @@ const STATUS_MAPPING: Record<ComplaintStatus, keyof typeof STATUS_COLORS> = {
   "Resolved": "resolved",
 };
 
+const STATUS_OPTIONS: ComplaintStatus[] = [
+  "Open",
+  "In Progress",
+  "Pending",
+  "On Hold",
+  "Resolved",
+];
+
+type StatusFilter = "All" | ComplaintStatus;
+
 export default function ComplaintsTable({
   complaints,
   isLoading,
@@ -48,6 +60,8 @@ export default function ComplaintsTable({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userMap, setUserMap] = useState<Record<string, User | null>>({});
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
+  const [projectSearch, setProjectSearch] = useState("");
 
   const getLastUpdateUser = (complaint: ComplaintWithDetails): { name: string; timestamp: string } | null => {
     if (!complaint.statusHistory || complaint.statusHistory.length === 0) {
@@ -150,6 +164,20 @@ export default function ComplaintsTable({
     return userMap[userId]?.fullName || userId || "—";
   };
 
+  const filteredComplaints = complaints.filter((complaint) => {
+    // Status filter
+    if (statusFilter !== "All" && complaint.status !== statusFilter) {
+      return false;
+    }
+
+    // Project name search
+    if (projectSearch && !complaint.projectName?.toLowerCase().includes(projectSearch.toLowerCase())) {
+      return false;
+    }
+
+    return true;
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -169,7 +197,63 @@ export default function ComplaintsTable({
 
   return (
     <div className="space-y-4">
-      {complaints.length === 0 ? (
+      {/* Filters */}
+      <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          {/* Status Filter */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700">Status</label>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Status</SelectItem>
+                {STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Project Name Search */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700">Project Name</label>
+            <Input
+              type="text"
+              placeholder="Search project..."
+              value={projectSearch}
+              onChange={(e) => setProjectSearch(e.target.value)}
+              className="w-full sm:w-48"
+            />
+          </div>
+
+          {/* Clear Filters Button */}
+          {(statusFilter !== "All" || projectSearch) && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setStatusFilter("All");
+                setProjectSearch("");
+              }}
+              className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 w-full sm:w-auto"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {filteredComplaints.length === 0 && complaints.length > 0 ? (
+        <Card className="p-8 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+          <p className="text-gray-600">No complaints match your filters</p>
+        </Card>
+      ) : complaints.length === 0 ? (
         <Card className="p-8 text-center">
           <AlertCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <p className="text-gray-600">No complaints found</p>
@@ -177,7 +261,7 @@ export default function ComplaintsTable({
       ) : (
         <>
           <div className="space-y-3 md:hidden">
-            {complaints.map((complaint) => {
+            {filteredComplaints.map((complaint) => {
               const isExpanded = expandedComplaintId === complaint.id;
               return (
                 <Card key={complaint.id} className="border border-slate-200 shadow-sm">
@@ -274,7 +358,7 @@ export default function ComplaintsTable({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {complaints.map((complaint) => {
+                  {filteredComplaints.map((complaint) => {
                     const isExpanded = expandedComplaintId === complaint.id;
                     return (
                       <Fragment key={complaint.id}>
