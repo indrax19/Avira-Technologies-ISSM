@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle2, Eye, EyeOff, ShieldCheck, LayoutGrid, FileCheck2 } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, ShieldCheck, LayoutGrid, FileCheck2, Package } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -125,6 +125,13 @@ export default function Login() {
         {/* Right Login Form */}
         <div className="flex items-center justify-center p-4 sm:p-6 md:p-10 w-full">
           <div className="w-full max-w-sm rounded-xl sm:rounded-2xl lg:rounded-[1.75rem] border border-slate-200 bg-white p-6 sm:p-8 shadow-lg shadow-slate-900/5">
+
+            {/* Logo - Desktop and Mobile */}
+            <div className="mb-6 sm:mb-8 flex justify-center lg:hidden">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-800">
+                <Package className="h-6 w-6 text-white" />
+              </div>
+            </div>
 
             {/* Mobile header */}
             <div className="mb-6 sm:mb-8 lg:hidden">
