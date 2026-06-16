@@ -44,6 +44,8 @@ import {
   FileText,
   AlertCircle,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportSiteDataToExcel } from "@/lib/excelExport";
@@ -133,6 +135,8 @@ export default function TechnicalProjectDetail() {
   const [project, setProject] = useState<any>(null);
   const [sites, setSites] = useState<SiteDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(30);
 
   // Load issues for the current site
   const { issues, isLoading: issuesLoading } = useIssuesBySite(issuesSiteId || "");
@@ -251,6 +255,11 @@ export default function TechnicalProjectDetail() {
       (site.rustdeskId2 && site.rustdeskId2.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   });
+
+  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredSites.length / itemsPerPage);
+  const startIdx = itemsPerPage === -1 ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIdx = itemsPerPage === -1 ? filteredSites.length : startIdx + itemsPerPage;
+  const paginatedSites = filteredSites.slice(startIdx, endIdx);
 
   const openIssueCountsBySite = useMemo(() => {
     return allIssues.reduce<Record<string, number>>((counts, issue) => {
@@ -419,7 +428,10 @@ export default function TechnicalProjectDetail() {
               <Input
                 placeholder="Search by mill name, location, supervisor, or anydesk ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="h-11 sm:h-12 rounded-xl border-slate-200 pl-12 pr-4 focus-visible:ring-2 focus-visible:ring-blue-500"
               />
             </div>
@@ -445,7 +457,7 @@ export default function TechnicalProjectDetail() {
           {filteredSites.length > 0 ? (
             <>
               <div className="grid gap-3 p-4 md:hidden">
-                {filteredSites.map((site) => (
+                {paginatedSites.map((site) => (
                   <Card key={site.id} className="border border-slate-200 shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -578,7 +590,7 @@ export default function TechnicalProjectDetail() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredSites.map((site) => (
+                    {paginatedSites.map((site) => (
                       <TableRow key={site.id} className="transition-colors hover:bg-blue-50/50">
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
@@ -707,6 +719,69 @@ export default function TechnicalProjectDetail() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex flex-col gap-4 border-t border-slate-200 p-4 md:p-6 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-600">Items per page:</span>
+                  <select
+                    value={itemsPerPage === -1 ? "all" : itemsPerPage}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setItemsPerPage(value === "all" ? -1 : parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">All</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 md:gap-6">
+                  <span className="text-sm text-slate-600">
+                    Showing {itemsPerPage === -1 ? filteredSites.length : Math.min(startIdx + 1, filteredSites.length)}–{itemsPerPage === -1 ? filteredSites.length : Math.min(endIdx, filteredSites.length)} of {filteredSites.length}
+                  </span>
+
+                  {itemsPerPage !== -1 && totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="h-9 w-9 p-0"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className="h-9 min-w-9 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="h-9 w-9 p-0"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (
