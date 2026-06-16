@@ -193,6 +193,10 @@ export default function CategoryDetail() {
   const getSubCategoryItems = (subCatId: string) =>
     items?.filter((item) => item.subcategory_id === subCatId) || [];
 
+  const getAvailableStock = (subCatId: string) => {
+    return items?.filter((item) => item.subcategory_id === subCatId && item.status === "in").length || 0;
+  };
+
   const handleDeleteSubCat = (subCatId: string) => {
     if (!isAdmin) {
       toast.error("Permission Denied: Only administrators can delete sub categories");
@@ -289,6 +293,7 @@ export default function CategoryDetail() {
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <Badge variant="secondary">{subCatItems.length} items</Badge>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{getAvailableStock(subCat.id!)} available</Badge>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700" onClick={() => openEditSubCat(subCat)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
