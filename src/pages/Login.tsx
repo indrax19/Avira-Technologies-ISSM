@@ -126,22 +126,13 @@ export default function Login() {
         <div className="flex items-center justify-center p-4 sm:p-6 md:p-10 w-full">
           <div className="w-full max-w-sm rounded-xl sm:rounded-2xl lg:rounded-[1.75rem] border border-slate-200 bg-white p-6 sm:p-8 shadow-lg shadow-slate-900/5">
 
-            {/* Logo - Desktop and Mobile */}
-            <div className="mb-6 sm:mb-8 flex justify-center lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-800">
-                <Package className="h-6 w-6 text-white" />
-              </div>
-            </div>
-
-            {/* Mobile header */}
-            <div className="mb-6 sm:mb-8 lg:hidden">
-              <div className="inline-flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-brand-primary px-3 sm:px-4 py-2 sm:py-3 text-white shadow-sm" style={{ backgroundColor: "#273C70" }}>
-                <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 text-white" />
-                <div className="min-w-0">
-                  <p className="text-xs text-white/70">Avira Technologies</p>
-                  <h1 className="text-sm sm:text-lg font-semibold leading-tight">Project Management Portal</h1>
-                </div>
-              </div>
+            {/* Avira Logo */}
+            <div className="mb-6 sm:mb-8 flex justify-center">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets%2F8934386caff3497686ed90270fdd753f%2F90e618d4a91e478a964d0f3d54315cbe?format=webp&width=800&height=1200"
+                alt="Avira Technologies Logo"
+                className="h-12 sm:h-14 object-contain"
+              />
             </div>
 
             <div className="mb-6 sm:mb-8 text-center">
