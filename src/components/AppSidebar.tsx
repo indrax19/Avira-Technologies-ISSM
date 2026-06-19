@@ -23,7 +23,7 @@ const navItems = [
   { title: "Delivery Challans", url: "/delivery-challans", icon: Truck, permission: "delivery-challans" },
   { title: "Invoices", url: "/invoices", icon: Receipt, permission: "invoices" },
   { title: "Technical Details", url: "/sites", icon: MapPin, permission: "sites" },
-  { title: "Complaints", url: "/complaints", icon: AlertCircle, permission: "complaints" },
+  { title: "Support Tickets", url: "/complaints", icon: AlertCircle, permission: "complaints" },
   { title: "Projects Tracking", url: "/projects", icon: CheckSquare, permission: "project-tracking" },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
   { title: "Reports", url: "/reports", icon: FileText, permission: "reports" },

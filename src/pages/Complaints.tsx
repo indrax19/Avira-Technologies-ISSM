@@ -193,14 +193,14 @@ export default function Complaints() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <Badge className="border border-white/25 bg-white/15 text-white hover:bg-white/15">
-                  Complaint Management
+                  Support Tickets
                 </Badge>
               </div>
 
               <div>
-                <h1 className="text-3xl font-bold md:text-4xl">Complaints & Issues</h1>
+                <h1 className="text-3xl font-bold md:text-4xl">Support Tickets</h1>
                 <p className="mt-2 max-w-2xl text-sm text-blue-50 md:text-base">
-                  Track, manage, and resolve all company complaints and issues across projects and sites.
+                  Track, manage, and resolve all company support tickets across projects and sites.
                 </p>
               </div>
             </div>
