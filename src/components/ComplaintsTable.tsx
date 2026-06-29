@@ -51,8 +51,7 @@ type StatusFilter = "All" | ComplaintStatus;
 
 const PAKISTAN_TIMEZONE = "Asia/Karachi";
 
-const isNewComplaint = (createdTime: string, status: string): boolean => {
-  if (status === "Resolved") return false;
+const isNewComplaint = (createdTime: string): boolean => {
   const createdDate = new Date(createdTime);
   const now = new Date();
   const diffHours = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
@@ -335,7 +334,7 @@ export default function ComplaintsTable({
                           className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
                         >
                           <AlertCircle className="h-4 w-4" />
-                          Update Status
+                          
                         </Button>
                       )}
                       {canDeleteComplaint(complaint) && (
@@ -401,7 +400,7 @@ export default function ComplaintsTable({
                           <TableCell className="text-sm text-gray-600">
                             <div className="flex items-center gap-2">
                               <span>{formatCreatedTimeWithTZ(complaint.createdTime)}</span>
-                              {isNewComplaint(complaint.createdTime, complaint.status) && (
+                              {isNewComplaint(complaint.createdTime) && (
                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100">New</Badge>
                               )}
                             </div>
@@ -415,11 +414,12 @@ export default function ComplaintsTable({
                               {complaint.status !== "Resolved" && onStatusUpdateClick && (
                                 <Button
                                   size="sm"
+                                  variant="ghost"
                                   onClick={() => onStatusUpdateClick(complaint)}
-                                  className="gap-2 bg-green-500 hover:bg-green-600 text-white rounded-lg px-4"
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                  title="Update Status"
                                 >
-                                  Update Status
-                                  <span>→</span>
+                                  <AlertCircle className="h-4 w-4 text-blue-600" />
                                 </Button>
                               )}
                               {canDeleteComplaint(complaint) && (
