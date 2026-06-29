@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { ComplaintWithDetails } from "@/hooks/useComplaints";
 import { complaintsAPI, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
 import { usersAPI, type User } from "@/integrations/firebase/usersAPI";
-import { format } from "date-fns";
+import { format, formatInTimeZone } from "date-fns-tz";
 import { STATUS_COLORS } from "@/lib/colors";
 import {
   AlertDialog,
@@ -48,6 +48,19 @@ const STATUS_OPTIONS: ComplaintStatus[] = [
 ];
 
 type StatusFilter = "All" | ComplaintStatus;
+
+const PAKISTAN_TIMEZONE = "Asia/Karachi";
+
+const isNewComplaint = (createdTime: string): boolean => {
+  const createdDate = new Date(createdTime);
+  const now = new Date();
+  const diffHours = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  return diffHours < 24;
+};
+
+const formatCreatedTimeWithTZ = (createdTime: string): string => {
+  return formatInTimeZone(new Date(createdTime), PAKISTAN_TIMEZONE, "MMM dd, yyyy HH:mm");
+};
 
 export default function ComplaintsTable({
   complaints,
@@ -292,7 +305,7 @@ export default function ComplaintsTable({
                         <span className="font-semibold">Site:</span> {complaint.siteName}
                       </p>
                       <p className="text-slate-600">
-                        <span className="font-semibold">Created:</span> {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
+                        <span className="font-semibold">Created:</span> {formatCreatedTimeWithTZ(complaint.createdTime)}
                       </p>
                       <p className="text-slate-600">
                         <span className="font-semibold">By:</span> {getUserName(complaint.createdBy)}
@@ -385,7 +398,12 @@ export default function ComplaintsTable({
                           <TableCell className="text-sm text-gray-700">{complaint.siteName}</TableCell>
                           <TableCell>{getStatusBadge(complaint.status)}</TableCell>
                           <TableCell className="text-sm text-gray-600">
-                            {format(new Date(complaint.createdTime), "MMM dd, yyyy")}
+                            <div className="flex items-center gap-2">
+                              <span>{formatCreatedTimeWithTZ(complaint.createdTime)}</span>
+                              {isNewComplaint(complaint.createdTime) && (
+                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">New</Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm text-gray-700">{getUserName(complaint.createdBy)}</TableCell>
                           <TableCell className="text-sm text-gray-700">
