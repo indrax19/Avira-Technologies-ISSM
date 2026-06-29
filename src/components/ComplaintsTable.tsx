@@ -333,6 +333,7 @@ export default function ComplaintsTable({
                           onClick={() => onStatusUpdateClick(complaint)}
                           className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
                         >
+                          <AlertCircle className="h-4 w-4" />
                           Update Status
                         </Button>
                       )}
