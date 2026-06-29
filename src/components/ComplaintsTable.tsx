@@ -415,12 +415,11 @@ export default function ComplaintsTable({
                               {complaint.status !== "Resolved" && onStatusUpdateClick && (
                                 <Button
                                   size="sm"
-                                  variant="ghost"
                                   onClick={() => onStatusUpdateClick(complaint)}
-                                  className="h-8 w-8 p-0 hover:bg-blue-100"
-                                  title="Update Status"
+                                  className="gap-2 bg-green-500 hover:bg-green-600 text-white rounded-lg px-4"
                                 >
-                                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                                  Update Status
+                                  <span>→</span>
                                 </Button>
                               )}
                               {canDeleteComplaint(complaint) && (
