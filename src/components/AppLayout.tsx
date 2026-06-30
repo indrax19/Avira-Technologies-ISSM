@@ -25,7 +25,7 @@ export function AppLayout() {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 sm:h-14 flex items-center justify-between border-b bg-card px-2 sm:px-4 gap-2 sm:gap-4">
+          <header className="h-12 sm:h-14 flex items-center justify-between border-b bg-white shadow-sm px-2 sm:px-4 gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <SidebarTrigger className="h-8 w-8 sm:h-10 sm:w-10" />
               <Link
@@ -35,17 +35,17 @@ export function AppLayout() {
                 Project Management Portal
               </Link>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <NotificationBell />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200 shadow-sm text-xs sm:text-sm"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-lg border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200 shadow-sm text-xs sm:text-sm font-medium"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4 flex-shrink-0" />
-                <span className="font-medium hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </header>
