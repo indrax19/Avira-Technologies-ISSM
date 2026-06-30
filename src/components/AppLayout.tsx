@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { NotificationBell } from "@/components/NotificationBell";
 import { useComplaintNotifications } from "@/hooks/useComplaintNotifications";
 
 export function AppLayout() {
@@ -35,19 +34,16 @@ export function AppLayout() {
                 Project Management Portal
               </Link>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <NotificationBell />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-lg border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200 shadow-sm text-xs sm:text-sm font-medium"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-lg border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200 shadow-sm text-xs sm:text-sm font-medium"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
           </header>
           <main className="flex-1 overflow-auto overflow-x-auto p-2 sm:p-4 md:p-6">
             <Outlet />
