@@ -2,6 +2,8 @@ import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, U
 import { NavLink } from "@/components/NavLink";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useUnresolvedComplaintsCount } from "@/hooks/useUnresolvedComplaintsCount";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +42,7 @@ export function AppSidebar() {
   const { state, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const { isAdmin, appUser } = useAuth();
+  const unresolvedComplaintsCount = useUnresolvedComplaintsCount();
 
   // Close mobile sidebar when a menu item is clicked
   const handleNavClick = () => {
@@ -79,16 +82,23 @@ export function AppSidebar() {
                 .map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        end={item.url === "/"}
-                        className="hover:bg-sidebar-accent/50"
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                        onClick={handleNavClick}
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </NavLink>
+                      <div className="flex items-center justify-between w-full">
+                        <NavLink
+                          to={item.url}
+                          end={item.url === "/"}
+                          className="hover:bg-sidebar-accent/50 flex-1"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                          onClick={handleNavClick}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                        {!collapsed && item.title === "Support Tickets" && unresolvedComplaintsCount > 0 && (
+                          <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center rounded-full p-0 text-xs">
+                            {unresolvedComplaintsCount > 99 ? '99+' : unresolvedComplaintsCount}
+                          </Badge>
+                        )}
+                      </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
