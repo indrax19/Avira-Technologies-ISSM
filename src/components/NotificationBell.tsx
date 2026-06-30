@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useActivity } from '@/context/ActivityContext';
 import { useAuth } from '@/context/AuthContext';
 import { notificationsAPI, type Notification } from '@/integrations/firebase/notificationsAPI';
+import { useUnresolvedComplaintsCount } from '@/hooks/useUnresolvedComplaintsCount';
 import {
   Popover,
   PopoverContent,
@@ -24,12 +25,14 @@ interface CombinedNotification {
 
 export function NotificationBell() {
   const { activities, unreadCount, markAsRead, markAllAsRead } = useActivity();
-  const { appUser } = useAuth();
+  const { appUser, hasPermission } = useAuth();
   const [issueNotifications, setIssueNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const hasLoadedIssueNotificationsRef = useRef(false);
   const shownIssueToastIdsRef = useRef<Set<string>>(new Set());
+  const unresolvedComplaintsCount = useUnresolvedComplaintsCount();
+  const canViewComplaints = hasPermission('complaints');
 
   // Subscribe to issue notifications for the current user
   useEffect(() => {
@@ -118,7 +121,8 @@ export function NotificationBell() {
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   const recentNotifications = combinedNotifications.slice(0, 5);
-  const totalUnread = unreadCount + issueNotifications.filter((n) => !n.isRead).length;
+  const complaintsBadgeCount = canViewComplaints ? unresolvedComplaintsCount : 0;
+  const totalUnread = unreadCount + issueNotifications.filter((n) => !n.isRead).length + complaintsBadgeCount;
 
   const handleMarkAsRead = async (notification: CombinedNotification) => {
     if (notification.type === 'activity') {

@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { ActivityProvider } from "@/context/ActivityContext";
@@ -78,7 +77,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <NetworkStatusBar />
-      <Toaster />
       <BrowserRouter>
         <AuthProvider>
           <ActivityProvider>
