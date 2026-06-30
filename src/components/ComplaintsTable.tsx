@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight, X } from "lucide-react";
+import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight, X, Info } from "lucide-react";
 import StatusHistoryPanel from "./StatusHistoryPanel";
+import SiteDetailsModal from "./SiteDetailsModal";
 import { toast } from "sonner";
 import { ComplaintWithDetails } from "@/hooks/useComplaints";
 import { complaintsAPI, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
@@ -76,6 +77,13 @@ export default function ComplaintsTable({
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [siteSearch, setSiteSearch] = useState("");
+  const [siteDetailsModalOpen, setSiteDetailsModalOpen] = useState(false);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | undefined>();
+
+  const handleOpenSiteDetails = (siteId: string) => {
+    setSelectedSiteId(siteId);
+    setSiteDetailsModalOpen(true);
+  };
 
   const getLastUpdateUser = (complaint: ComplaintWithDetails): { name: string; timestamp: string } | null => {
     if (!complaint.statusHistory || complaint.statusHistory.length === 0) {
@@ -303,7 +311,15 @@ export default function ComplaintsTable({
                         <span className="font-semibold">Project:</span> {complaint.projectName}
                       </p>
                       <p className="text-slate-600">
-                        <span className="font-semibold">Site:</span> {complaint.siteName}
+                        <span className="font-semibold">Site:</span>
+                        <button
+                          onClick={() => handleOpenSiteDetails(complaint.siteId)}
+                          className="ml-1 text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1"
+                          title="View site details"
+                        >
+                          {complaint.siteName}
+                          <Info className="h-3 w-3" />
+                        </button>
                       </p>
                       <p className="text-slate-600">
                         <span className="font-semibold">Created:</span> {formatCreatedTimeWithTZ(complaint.createdTime)}
@@ -396,7 +412,16 @@ export default function ComplaintsTable({
                             </button>
                           </TableCell>
                           <TableCell className="text-sm text-gray-700">{complaint.projectName}</TableCell>
-                          <TableCell className="text-sm text-gray-700">{complaint.siteName}</TableCell>
+                          <TableCell className="text-sm">
+                            <button
+                              onClick={() => handleOpenSiteDetails(complaint.siteId)}
+                              className="text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1"
+                              title="View site details"
+                            >
+                              {complaint.siteName}
+                              <Info className="h-3 w-3" />
+                            </button>
+                          </TableCell>
                           <TableCell>{getStatusBadge(complaint.status)}</TableCell>
                           <TableCell className="text-sm text-gray-600">
                             <div className="flex items-center gap-2">
@@ -485,6 +510,12 @@ export default function ComplaintsTable({
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SiteDetailsModal
+        open={siteDetailsModalOpen}
+        onOpenChange={setSiteDetailsModalOpen}
+        siteId={selectedSiteId}
+      />
     </div>
   );
 }
