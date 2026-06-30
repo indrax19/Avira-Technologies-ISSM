@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SiteSelectDropdown from "@/components/SiteSelectDropdown";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -332,26 +333,16 @@ export default function Complaints() {
               <Label htmlFor="site" className="font-semibold">
                 Site *
               </Label>
-              <Select value={formData.siteId} onValueChange={(value) => {
-                setFormData({ ...formData, siteId: value });
-              }}>
-                <SelectTrigger id="site">
-                  <SelectValue placeholder={formData.projectId ? "Select a site" : "Please select a project first"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredSites.length === 0 ? (
-                    <div className="p-2 text-sm text-gray-600">
-                      {formData.projectId ? "No sites for this project" : "Select a project first"}
-                    </div>
-                  ) : (
-                    filteredSites.map((site) => (
-                      <SelectItem key={site.id} value={site.id || ""}>
-                        {site.millName || "Unnamed Site"}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <SiteSelectDropdown
+                sites={filteredSites}
+                value={formData.siteId}
+                onChange={(siteId) => setFormData({ ...formData, siteId })}
+                placeholder={formData.projectId ? "Search and select a site..." : "Please select a project first"}
+                disabled={!formData.projectId}
+              />
+              {!formData.projectId && (
+                <p className="text-xs text-gray-500 mt-1">Select a project first to see available sites</p>
+              )}
             </div>
 
             {/* Subject */}
