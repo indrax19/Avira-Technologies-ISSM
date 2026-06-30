@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useComplaintNotifications } from "@/hooks/useComplaintNotifications";
 
 export function AppLayout() {
   const { logout } = useAuth();
+  useComplaintNotifications();
 
   const handleLogout = async () => {
     try {
