@@ -22,6 +22,7 @@ interface SiteData {
   millLocation?: string;
   pocName?: string;
   pocContact?: string;
+  gpuPassword?: string;
   anydeskId?: string;
   anydeskPassword?: string;
   anydeskId2?: string;
@@ -39,6 +40,7 @@ const downloadSampleTemplate = () => {
     'Mill Location',
     'POC Name',
     'POC Contact',
+    'GPU Password',
     'AnyDesk ID 1',
     'AnyDesk Password 1',
     'AnyDesk ID 2',
@@ -49,9 +51,9 @@ const downloadSampleTemplate = () => {
 
   const sampleData = [
     headers,
-    ['ABC Textile Mill', 'Mumbai, Maharashtra', 'Rajesh Kumar', '9876543210', 'AD123456', 'Sonicgpu786', 'AD789012', 'Sonicgpu786', 'Mr. Singh', 'Amit Kumar'],
-    ['XYZ Cotton Mill', 'Ahmedabad, Gujarat', 'Priya Sharma', '9123456789', 'AD345678', 'Sonicgpu786', '', '', 'Ms. Patel', 'Raj Singh'],
-    ['DEF Spinning Unit', 'Coimbatore, Tamil Nadu', 'Arun Singh', '9234567890', 'AD901234', 'Sonicgpu786', '', '', 'Mr. Murugan', 'Ravi Kumar'],
+    ['ABC Textile Mill', 'Mumbai, Maharashtra', 'Rajesh Kumar', '9876543210', 'Sonicgpu786', 'AD123456', 'Sonicgpu786', 'AD789012', 'Sonicgpu786', 'Mr. Singh', 'Amit Kumar'],
+    ['XYZ Cotton Mill', 'Ahmedabad, Gujarat', 'Priya Sharma', '9123456789', 'Sonicgpu786', 'AD345678', 'Sonicgpu786', '', '', 'Ms. Patel', 'Raj Singh'],
+    ['DEF Spinning Unit', 'Coimbatore, Tamil Nadu', 'Arun Singh', '9234567890', 'Sonicgpu786', 'AD901234', 'Sonicgpu786', '', '', 'Mr. Murugan', 'Ravi Kumar'],
   ];
 
   const worksheet = XLSX.utils.aoa_to_sheet(sampleData);
@@ -60,6 +62,7 @@ const downloadSampleTemplate = () => {
     { wch: 25 },
     { wch: 25 },
     { wch: 20 },
+    { wch: 15 },
     { wch: 15 },
     { wch: 15 },
     { wch: 18 },
@@ -121,7 +124,7 @@ export function BulkImportSites({ open, onOpenChange, technicalProjectId }: Bulk
             technicianName: row.technicianName || undefined,
             date: new Date().toISOString().split("T")[0],
             gpuUserName: undefined,
-            gpuPassword: "Sonicgpu786",
+            gpuPassword: row.gpuPassword || "Sonicgpu786",
             tailscaleIp: undefined,
             remoteanydeskPassword: "Sonicgpu786",
             remoteanydeskAccountName: undefined,
@@ -239,6 +242,7 @@ export function BulkImportSites({ open, onOpenChange, technicalProjectId }: Bulk
             millLocation: toString(findKey(["millLocation", "mill location", "location"])(row)),
             pocName: toString(findKey(["pocName", "poc name", "poc"])(row)),
             pocContact: toString(findKey(["pocContact", "poc contact", "contact", "phone"])(row)),
+            gpuPassword: toString(findKey(["gpuPassword", "gpu password"])(row)),
             anydeskId: toString(findKey(["anydeskId", "anydesk id 1", "anydesk id", "anydesk 1"])(row)),
             anydeskPassword: toString(findKey(["anydeskPassword", "anydesk password 1", "anydesk password"])(row)),
             anydeskId2: toString(findKey(["anydeskId2", "anydesk id 2", "anydesk 2"])(row)),
@@ -299,7 +303,7 @@ export function BulkImportSites({ open, onOpenChange, technicalProjectId }: Bulk
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Mill Name</strong> is required. Other columns (Mill Location, POC Name, POC Contact, AnyDesk IDs, AnyDesk Passwords, Supervisor Name, Technician Name) are optional.
+                  <strong>Mill Name</strong> is required. Other columns (Mill Location, POC Name, POC Contact, GPU Password, AnyDesk IDs, AnyDesk Passwords, Supervisor Name, Technician Name) are optional.
                 </AlertDescription>
               </Alert>
 
@@ -378,6 +382,7 @@ export function BulkImportSites({ open, onOpenChange, technicalProjectId }: Bulk
                         <th className="px-4 py-2 text-left font-medium">Location</th>
                         <th className="px-4 py-2 text-left font-medium">POC Name</th>
                         <th className="px-4 py-2 text-left font-medium">POC Contact</th>
+                        <th className="px-4 py-2 text-left font-medium">GPU Password</th>
                         <th className="px-4 py-2 text-left font-medium">AnyDesk ID 1</th>
                         <th className="px-4 py-2 text-left font-medium">Supervisor</th>
                         <th className="px-4 py-2 text-left font-medium">Technician</th>
@@ -397,6 +402,7 @@ export function BulkImportSites({ open, onOpenChange, technicalProjectId }: Bulk
                             <td className="px-4 py-2">{row.millLocation || "—"}</td>
                             <td className="px-4 py-2">{row.pocName || "—"}</td>
                             <td className="px-4 py-2">{row.pocContact || "—"}</td>
+                            <td className="px-4 py-2">{row.gpuPassword || "—"}</td>
                             <td className="px-4 py-2">{row.anydeskId || "—"}</td>
                             <td className="px-4 py-2">{row.supervisorName || "—"}</td>
                             <td className="px-4 py-2">{row.technicianName || "—"}</td>
