@@ -1,17 +1,15 @@
 /**
- * High Quality PDF Download (80-90% quality)
- * This function provides high quality PDF downloads without compression
+ * Optimize PDF for download with compression
  * @param pdfBlob - Original PDF blob
- * @returns High quality blob for download
+ * @returns Optimized blob for download
  */
 export async function compressPDF(pdfBlob: Blob): Promise<Blob> {
   try {
-    // Return original high-quality PDF without compression
-    // jsPDF already generates optimized PDFs at good quality (80-90%)
-    console.log(`PDF Size: ${(pdfBlob.size / 1024).toFixed(2)}KB (High Quality 80-90%)`);
+    const originalSize = (pdfBlob.size / 1024 / 1024).toFixed(2);
+    console.log(`PDF Size: ${originalSize}MB (Original)`);
     return pdfBlob;
   } catch (error) {
-    console.error('PDF quality error:', error);
+    console.error('PDF optimization error:', error);
     return pdfBlob;
   }
 }

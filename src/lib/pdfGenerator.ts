@@ -26,7 +26,7 @@ export async function generateChallanPDF(challan: Challan, profileId?: string): 
     orientation: "portrait",
     unit: "mm",
     format: "a4",
-    compress: false, // Disable compression for better quality (80-90%)
+    compress: true, // Enable compression for reduced file size
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -306,7 +306,7 @@ export async function generateSiteDataPDF(challan: Challan, profileId?: string):
     orientation: "portrait",
     unit: "mm",
     format: "a4",
-    compress: false, // Disable compression for better quality (80-90%)
+    compress: true, // Enable compression for reduced file size
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -573,7 +573,7 @@ export async function generateInvoicePDF(invoice: Invoice, profileId?: string): 
     orientation: "portrait",
     unit: "mm",
     format: "a4",
-    compress: false, // Disable compression for better quality (80-90%)
+    compress: true, // Enable compression for reduced file size
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -884,7 +884,7 @@ export async function generateDeploymentCertificatePDF(
     orientation: "portrait",
     unit: "mm",
     format: "a4",
-    compress: false, // Disable compression for better quality (80-90%)
+    compress: true, // Enable compression for reduced file size
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -896,7 +896,7 @@ export async function generateDeploymentCertificatePDF(
 
   // ============================
   // Fetch Company Profile
-  // ============================
+  // =============================
   let companyProfile: any = null;
 
   try {
@@ -1316,7 +1316,7 @@ export async function generateProjectSitePDF(site: any, profileId?: string): Pro
     orientation: "portrait",
     unit: "mm",
     format: "a4",
-    compress: false,
+    compress: true, // Enable compression for reduced file size
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();

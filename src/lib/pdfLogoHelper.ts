@@ -42,8 +42,9 @@ export async function addLogoToPDF(
           ? "WEBP"
           : "JPEG";
 
-    // Convert blob to base64 for more reliable PDF embedding
-    const base64Data = await blobToBase64(blob);
+    // Compress image before embedding to reduce PDF size
+    const compressedBlob = await compressImage(blob, imageFormat);
+    const base64Data = await blobToBase64(compressedBlob);
 
     // Get image dimensions using Image object
     const dimensions = await getImageDimensions(logoUrl);
@@ -88,6 +89,58 @@ export async function addLogoToPDF(
     // Return 0 to indicate logo wasn't added, so positioning can continue normally
     return 0;
   }
+}
+
+/**
+ * Compresses image for PDF embedding to reduce file size
+ */
+async function compressImage(blob: Blob, format: string): Promise<Blob> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      resolve(blob);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      // Scale down to reasonable size for PDF (max 400px for logos)
+      const maxDim = 400;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height && width > maxDim) {
+        height = (height * maxDim) / width;
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = (width * maxDim) / height;
+        height = maxDim;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to compressed format
+      const quality = format === "PNG" ? 0.85 : 0.75;
+      canvas.toBlob(
+        (compressedBlob) => {
+          resolve(compressedBlob || blob);
+        },
+        format === "PNG" ? "image/png" : "image/jpeg",
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      resolve(blob);
+    };
+
+    img.src = URL.createObjectURL(blob);
+  });
 }
 
 /**
