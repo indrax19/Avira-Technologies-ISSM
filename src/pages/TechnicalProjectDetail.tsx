@@ -32,6 +32,7 @@ import {
   MapPin,
   Eye,
   Download,
+  Upload,
   X,
   Search,
   FolderOpen,
@@ -56,6 +57,7 @@ import StatusUpdateDialog from "@/components/StatusUpdateDialog";
 import StatusHistoryPanel from "@/components/StatusHistoryPanel";
 import { companyProfileAPI, deploymentCertificateAPI, DeploymentCertificate } from "@/integrations/firebase/firestore";
 import { downloadDeploymentCertificatePDF } from "@/lib/pdfGenerator";
+import { BulkImportSites } from "@/components/BulkImportSites";
 
 const getDisplayValue = (value: ReactNode) => {
   if (value === undefined || value === null || value === "") return "—";
@@ -137,6 +139,7 @@ export default function TechnicalProjectDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
   // Load issues for the current site
   const { issues, isLoading: issuesLoading } = useIssuesBySite(issuesSiteId || "");
@@ -337,7 +340,7 @@ export default function TechnicalProjectDetail() {
               </div>
             </div>
 
-            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:min-w-[220px] lg:flex-col">
+            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:min-w-[280px] lg:flex-col">
               {sites.length > 0 && (
                 <Button
                   onClick={() => exportSiteDataToExcel(sites)}
@@ -347,6 +350,13 @@ export default function TechnicalProjectDetail() {
                   <Download className="h-4 w-4" /> Download Sites
                 </Button>
               )}
+              <Button
+                onClick={() => setShowBulkImportDialog(true)}
+                variant="outline"
+                className="w-full gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white sm:w-auto"
+              >
+                <Upload className="h-4 w-4" /> Import Sites
+              </Button>
               <Button
                 onClick={() => navigate(`/technical-projects/${id}/sites/new`)}
                 className="w-full gap-2 bg-white text-blue-700 shadow-md hover:bg-blue-50 sm:w-auto"
@@ -1518,6 +1528,13 @@ export default function TechnicalProjectDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Import Dialog */}
+      <BulkImportSites
+        open={showBulkImportDialog}
+        onOpenChange={setShowBulkImportDialog}
+        technicalProjectId={id}
+      />
     </div>
   );
 }
