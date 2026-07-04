@@ -160,8 +160,7 @@ export default function ComplaintsTable({
   };
 
   const canAddFollowUp = (complaint: ComplaintWithDetails): boolean => {
-    if (isAdmin) return true;
-    return complaint.createdBy === currentUserId;
+    return true;
   };
 
   const handleDelete = async (id: string) => {
@@ -389,10 +388,10 @@ export default function ComplaintsTable({
                           size="sm"
                           variant="outline"
                           onClick={() => onFollowUpClick(complaint)}
-                          className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
+                          className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
                         >
                           <MessageSquarePlus className="h-4 w-4" />
-                          Follow-up
+                          Reply
                         </Button>
                       )}
                       {canDeleteComplaint(complaint) && (
@@ -499,10 +498,10 @@ export default function ComplaintsTable({
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => onFollowUpClick(complaint)}
-                                  className="h-8 w-8 p-0 hover:bg-green-100"
-                                  title="Add Follow-up"
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                  title="Reply to ticket"
                                 >
-                                  <MessageSquarePlus className="h-4 w-4 text-green-600" />
+                                  <MessageSquarePlus className="h-4 w-4 text-blue-600" />
                                 </Button>
                               )}
                               {canDeleteComplaint(complaint) && (

@@ -68,9 +68,9 @@ export default function FollowUpDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Follow-up</DialogTitle>
+          <DialogTitle>Reply to Ticket</DialogTitle>
           <DialogDescription>
-            Add a new issue or update to this ticket
+            Add a message or update to this ticket
           </DialogDescription>
         </DialogHeader>
 
@@ -126,10 +126,10 @@ export default function FollowUpDialog({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Adding...
+                Sending...
               </>
             ) : (
-              "Add Follow-up"
+              "Send Reply"
             )}
           </Button>
         </DialogFooter>
