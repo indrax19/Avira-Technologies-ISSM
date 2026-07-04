@@ -52,8 +52,9 @@ type StatusFilter = "All" | ComplaintStatus;
 
 const PAKISTAN_TIMEZONE = "Asia/Karachi";
 
-const isNewComplaint = (createdTime: string, status: string): boolean => {
+const isNewComplaint = (createdTime: string, status: string, statusHistory?: any[]): boolean => {
   if (status === "Resolved") return false;
+  if (statusHistory && statusHistory.length > 1) return false;
   const createdDate = new Date(createdTime);
   const now = new Date();
   const diffHours = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
@@ -471,7 +472,7 @@ export default function ComplaintsTable({
                           <TableCell className="text-sm text-gray-600">
                             <div className="flex items-center gap-2">
                               <span>{formatCreatedTimeWithTZ(complaint.createdTime)}</span>
-                              {isNewComplaint(complaint.createdTime, complaint.status) && (
+                              {isNewComplaint(complaint.createdTime, complaint.status, complaint.statusHistory) && (
                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100">New</Badge>
                               )}
                             </div>
