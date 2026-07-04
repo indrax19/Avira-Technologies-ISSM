@@ -21,6 +21,7 @@ interface ComplaintStatusUpdateDialogProps {
 const STATUS_OPTIONS: ComplaintStatus[] = [
   "Open",
   "In Progress",
+  "Waiting for Response",
   "Pending",
   "On Hold",
   "Resolved",
@@ -29,6 +30,7 @@ const STATUS_OPTIONS: ComplaintStatus[] = [
 const STATUS_COLORS: Record<ComplaintStatus, string> = {
   "Open": "bg-blue-100 text-blue-800",
   "In Progress": "bg-orange-100 text-orange-800",
+  "Waiting for Response": "bg-purple-100 text-purple-800",
   "Pending": "bg-yellow-100 text-yellow-800",
   "On Hold": "bg-gray-100 text-gray-800",
   "Resolved": "bg-green-100 text-green-800",
@@ -50,11 +52,6 @@ export default function ComplaintStatusUpdateDialog({
 
     if (!complaint?.id) {
       toast.error("Complaint not found");
-      return;
-    }
-
-    if (!remarks.trim()) {
-      toast.error("Remarks is compulsory");
       return;
     }
 
@@ -139,7 +136,7 @@ export default function ComplaintStatusUpdateDialog({
           {/* Remarks */}
           <div className="space-y-2">
             <Label htmlFor="remarks" className="font-semibold">
-              Remarks / Notes *
+              Remarks / Notes (Optional)
             </Label>
             <Textarea
               id="remarks"

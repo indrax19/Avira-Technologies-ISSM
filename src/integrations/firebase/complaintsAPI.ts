@@ -16,6 +16,7 @@ import { removeUndefined, handleFirestoreError } from "./utils";
 export type ComplaintStatus =
   | "Open"
   | "In Progress"
+  | "Waiting for Response"
   | "Pending"
   | "On Hold"
   | "Resolved";

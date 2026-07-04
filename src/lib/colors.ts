@@ -25,6 +25,12 @@ export const STATUS_COLORS = {
     badge: "bg-status-in-progress/20 text-status-in-progress",
     color: "#3b82f6", // Blue
   },
+  waiting: {
+    bg: "bg-status-waiting/10",
+    text: "text-status-waiting",
+    badge: "bg-status-waiting/20 text-status-waiting",
+    color: "#a855f7", // Purple
+  },
   pending: {
     bg: "bg-status-pending/10",
     text: "text-status-pending",
