@@ -38,8 +38,6 @@ const STATUS_MAPPING: Record<ComplaintStatus, keyof typeof STATUS_COLORS> = {
   "Open": "open",
   "In Progress": "in-progress",
   "Waiting for Response": "waiting",
-  "Pending": "pending",
-  "On Hold": "on-hold",
   "Resolved": "resolved",
 };
 
@@ -47,8 +45,6 @@ const STATUS_OPTIONS: ComplaintStatus[] = [
   "Open",
   "In Progress",
   "Waiting for Response",
-  "Pending",
-  "On Hold",
   "Resolved",
 ];
 
