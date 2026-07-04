@@ -1,6 +1,5 @@
 import { FollowUp } from "@/integrations/firebase/complaintsAPI";
 import { formatInTimeZone } from "date-fns-tz";
-import { MessageSquare } from "lucide-react";
 
 interface FollowUpsPanelProps {
   followUps?: FollowUp[];
@@ -14,34 +13,24 @@ const formatTimestamp = (timestamp: string): string => {
 
 export default function FollowUpsPanel({ followUps }: FollowUpsPanelProps) {
   if (!followUps || followUps.length === 0) {
-    return (
-      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-        <MessageSquare className="h-5 w-5 mx-auto text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600">No follow-ups yet</p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="space-y-3">
+    <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+      <p className="text-sm font-semibold text-gray-700">Follow-ups</p>
       {followUps.map((followUp, index) => (
-        <div key={index} className="p-4 border border-gray-200 rounded-lg bg-white">
-          {followUp.subject && (
-            <p className="text-sm font-semibold text-gray-900 mb-2">
-              {followUp.subject}
-            </p>
-          )}
-          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words mb-3">
+        <div key={index} className="pl-4 border-l-2 border-blue-400 bg-blue-50 p-3 rounded">
+          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words mb-2">
             {followUp.description}
           </p>
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>
-              <span className="font-semibold text-gray-600">
-                {followUp.addedByName || followUp.addedBy || "Unknown"}
-              </span>
+          <p className="text-xs text-gray-500">
+            <span className="font-semibold text-gray-600">
+              {followUp.addedByName || followUp.addedBy || "Unknown"}
             </span>
-            <span>{formatTimestamp(followUp.timestamp)}</span>
-          </div>
+            {" · "}
+            {formatTimestamp(followUp.timestamp)}
+          </p>
         </div>
       ))}
     </div>

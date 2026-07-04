@@ -62,6 +62,10 @@ const isNewComplaint = (createdTime: string, status: string): boolean => {
   return diffHours < 24;
 };
 
+const hasFollowUps = (followUps?: any[]): boolean => {
+  return followUps && followUps.length > 0;
+};
+
 const formatCreatedTimeWithTZ = (createdTime: string): string => {
   return formatInTimeZone(new Date(createdTime), PAKISTAN_TIMEZONE, "MMM dd, yyyy HH:mm");
 };
@@ -307,11 +311,20 @@ export default function ComplaintsTable({
                           ) : (
                             <ChevronRight className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
                           )}
-                          <p className="font-semibold text-slate-900 break-words flex-1">{complaint.subject}</p>
+                          <div className="flex-1">
+                            <p className="font-semibold text-slate-900 break-words">{complaint.subject}</p>
+                            {hasFollowUps(complaint.followUps) && (
+                              <Badge className="mt-1 bg-orange-100 text-orange-800 hover:bg-orange-100">
+                                {complaint.followUps!.length} follow-up{complaint.followUps!.length > 1 ? 's' : ''}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm text-slate-600 break-words">{complaint.description}</p>
                       </button>
-                      {getStatusBadge(complaint.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(complaint.status)}
+                      </div>
                     </div>
 
                     <div className="rounded-lg bg-slate-50 p-3 space-y-2 text-sm">
@@ -342,6 +355,13 @@ export default function ComplaintsTable({
 
                     {isExpanded && (
                       <div className="border-t border-slate-200 pt-4 space-y-4">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <p className="text-xs font-semibold text-gray-600 mb-2">DESCRIPTION & UPDATES</p>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap break-words mb-3">
+                            {complaint.description}
+                          </p>
+                          <FollowUpsPanel followUps={complaint.followUps} />
+                        </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-700 mb-3">Status History</p>
                           <StatusHistoryPanel
@@ -349,12 +369,6 @@ export default function ComplaintsTable({
                             currentStatus={complaint.status}
                           />
                         </div>
-                        {complaint.followUps && complaint.followUps.length > 0 && (
-                          <div>
-                            <p className="text-sm font-semibold text-gray-700 mb-3">Follow-ups</p>
-                            <FollowUpsPanel followUps={complaint.followUps} />
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -423,7 +437,7 @@ export default function ComplaintsTable({
                           <TableCell>
                             <button
                               onClick={() => setExpandedComplaintId(isExpanded ? null : complaint.id!)}
-                              className="w-full text-left hover:opacity-75 transition-opacity max-w-sm space-y-1 xl:max-w-md"
+                              className="w-full text-left hover:opacity-75 transition-opacity max-w-sm space-y-2 xl:max-w-md"
                             >
                               <div className="flex items-start gap-2">
                                 {isExpanded ? (
@@ -431,7 +445,14 @@ export default function ComplaintsTable({
                                 ) : (
                                   <ChevronRight className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
                                 )}
-                                <p className="font-medium text-gray-900 break-words flex-1">{complaint.subject}</p>
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900 break-words">{complaint.subject}</p>
+                                  {hasFollowUps(complaint.followUps) && (
+                                    <Badge className="mt-1 text-xs bg-orange-100 text-orange-800 hover:bg-orange-100">
+                                      {complaint.followUps!.length} follow-up{complaint.followUps!.length > 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                               <p className="text-xs leading-5 text-gray-500 whitespace-pre-wrap break-words">
                                 {complaint.description}
@@ -502,6 +523,13 @@ export default function ComplaintsTable({
                           <TableRow className="bg-gray-50 hover:bg-gray-50">
                             <TableCell colSpan={8} className="p-4">
                               <div className="space-y-4">
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <p className="text-sm font-semibold text-gray-700 mb-3">Description & Updates</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words mb-3">
+                                    {complaint.description}
+                                  </p>
+                                  <FollowUpsPanel followUps={complaint.followUps} />
+                                </div>
                                 <div>
                                   <p className="text-sm font-semibold text-gray-700 mb-3">Status History & Timeline</p>
                                   <StatusHistoryPanel
@@ -509,12 +537,6 @@ export default function ComplaintsTable({
                                     currentStatus={complaint.status}
                                   />
                                 </div>
-                                {complaint.followUps && complaint.followUps.length > 0 && (
-                                  <div>
-                                    <p className="text-sm font-semibold text-gray-700 mb-3">Follow-ups</p>
-                                    <FollowUpsPanel followUps={complaint.followUps} />
-                                  </div>
-                                )}
                               </div>
                             </TableCell>
                           </TableRow>

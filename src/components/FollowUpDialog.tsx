@@ -25,8 +25,7 @@ export default function FollowUpDialog({
 }: FollowUpDialogProps) {
   const { appUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [subject, setSubject] = useState("");
-  const [description, setDescription] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +35,8 @@ export default function FollowUpDialog({
       return;
     }
 
-    if (!description.trim()) {
-      toast.error("Description is required");
+    if (!message.trim()) {
+      toast.error("Message is required");
       return;
     }
 
@@ -47,15 +46,13 @@ export default function FollowUpDialog({
         addedBy: appUser?.id || "Unknown",
         addedByName: appUser?.fullName,
         timestamp: new Date().toISOString(),
-        subject: subject.trim() || undefined,
-        description: description.trim(),
+        description: message.trim(),
       };
 
       await complaintsAPI.addFollowUp(complaint.id, followUp);
 
       toast.success("Follow-up added successfully");
-      setSubject("");
-      setDescription("");
+      setMessage("");
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
@@ -84,38 +81,22 @@ export default function FollowUpDialog({
             <p className="text-sm text-blue-900 mt-1">{complaint.subject}</p>
           </div>
 
-          {/* Subject */}
+          {/* Message */}
           <div className="space-y-2">
-            <Label htmlFor="subject" className="font-semibold">
-              Issue Subject (Optional)
-            </Label>
-            <Input
-              id="subject"
-              placeholder="Enter new issue subject..."
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              disabled={isLoading}
-              maxLength={200}
-            />
-            <p className="text-xs text-gray-500">{subject.length}/200</p>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="font-semibold">
-              Description *
+            <Label htmlFor="message" className="font-semibold">
+              Message *
             </Label>
             <Textarea
-              id="description"
-              placeholder="Describe your follow-up or new issue..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              id="message"
+              placeholder="Add a message or new issue..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               disabled={isLoading}
               rows={4}
               maxLength={1000}
               className="resize-none"
             />
-            <p className="text-xs text-gray-500">{description.length}/1000</p>
+            <p className="text-xs text-gray-500">{message.length}/1000</p>
           </div>
 
           {/* Info */}
