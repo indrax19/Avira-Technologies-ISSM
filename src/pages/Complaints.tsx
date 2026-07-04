@@ -29,6 +29,7 @@ import { useAllComplaints, type ComplaintWithDetails } from "@/hooks/useComplain
 import ComplaintsTable from "@/components/ComplaintsTable";
 import { complaintsAPI, type Complaint, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
 import ComplaintStatusUpdateDialog from "@/components/ComplaintStatusUpdateDialog";
+import FollowUpDialog from "@/components/FollowUpDialog";
 
 export default function Complaints() {
   const navigate = useNavigate();
@@ -41,6 +42,8 @@ export default function Complaints() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedComplaintForStatus, setSelectedComplaintForStatus] = useState<ComplaintWithDetails | null>(null);
   const [showStatusUpdateDialog, setShowStatusUpdateDialog] = useState(false);
+  const [selectedComplaintForFollowUp, setSelectedComplaintForFollowUp] = useState<ComplaintWithDetails | null>(null);
+  const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -117,6 +120,16 @@ export default function Complaints() {
     }
 
     try {
+      // Check for existing open tickets on the same site
+      const existingOpenTickets = await complaintsAPI.getOpenComplaintsBySite(formData.siteId);
+
+      if (existingOpenTickets.length > 0) {
+        toast.error(
+          `Cannot create new ticket. There is already an open ticket for this site. Please resolve the existing ticket first.`
+        );
+        return;
+      }
+
       const currentDateTime = new Date().toISOString();
       const newComplaint: Complaint = {
         projectId: formData.projectId,
@@ -137,6 +150,7 @@ export default function Complaints() {
             remarks: "Complaint created",
           },
         ],
+        followUps: [],
       };
 
       await complaintsAPI.create(newComplaint);
@@ -285,6 +299,10 @@ export default function Complaints() {
           setSelectedComplaintForStatus(complaint);
           setShowStatusUpdateDialog(true);
         }}
+        onFollowUpClick={(complaint) => {
+          setSelectedComplaintForFollowUp(complaint);
+          setShowFollowUpDialog(true);
+        }}
       />
 
       {/* Add Complaint Dialog */}
@@ -427,6 +445,17 @@ export default function Complaints() {
         complaint={selectedComplaintForStatus}
         onSuccess={() => {
           setSelectedComplaintForStatus(null);
+          queryClient.invalidateQueries({ queryKey: ["complaints"] });
+        }}
+      />
+
+      {/* Follow-up Dialog */}
+      <FollowUpDialog
+        open={showFollowUpDialog}
+        onOpenChange={setShowFollowUpDialog}
+        complaint={selectedComplaintForFollowUp}
+        onSuccess={() => {
+          setSelectedComplaintForFollowUp(null);
           queryClient.invalidateQueries({ queryKey: ["complaints"] });
         }}
       />
