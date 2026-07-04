@@ -213,8 +213,11 @@ export const complaintsAPI = {
         updatedBy,
         updatedByName,
         timestamp,
-        remarks,
       };
+
+      if (remarks) {
+        statusHistoryEntry.remarks = remarks;
+      }
 
       const statusHistory = complaint.statusHistory || [];
       statusHistory.push(statusHistoryEntry);
