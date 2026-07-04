@@ -22,8 +22,6 @@ const STATUS_OPTIONS: ComplaintStatus[] = [
   "Open",
   "In Progress",
   "Waiting for Response",
-  "Pending",
-  "On Hold",
   "Resolved",
 ];
 
@@ -31,8 +29,6 @@ const STATUS_COLORS: Record<ComplaintStatus, string> = {
   "Open": "bg-blue-100 text-blue-800",
   "In Progress": "bg-orange-100 text-orange-800",
   "Waiting for Response": "bg-purple-100 text-purple-800",
-  "Pending": "bg-yellow-100 text-yellow-800",
-  "On Hold": "bg-gray-100 text-gray-800",
   "Resolved": "bg-green-100 text-green-800",
 };
 
@@ -67,7 +63,7 @@ export default function ComplaintStatusUpdateDialog({
         newStatus,
         appUser?.id || "Unknown",
         appUser?.fullName,
-        remarks || undefined
+        remarks.trim() ? remarks : undefined
       );
 
       toast.success(`Complaint status updated to ${newStatus}`);
@@ -136,7 +132,7 @@ export default function ComplaintStatusUpdateDialog({
           {/* Remarks */}
           <div className="space-y-2">
             <Label htmlFor="remarks" className="font-semibold">
-              Remarks / Notes (Optional)
+              Reply / Notes (Optional)
             </Label>
             <Textarea
               id="remarks"

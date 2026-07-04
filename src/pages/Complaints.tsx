@@ -44,6 +44,8 @@ export default function Complaints() {
   const [showStatusUpdateDialog, setShowStatusUpdateDialog] = useState(false);
   const [selectedComplaintForFollowUp, setSelectedComplaintForFollowUp] = useState<ComplaintWithDetails | null>(null);
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
+  const [showExistingTicketDialog, setShowExistingTicketDialog] = useState(false);
+  const [existingTicketDetails, setExistingTicketDetails] = useState<ComplaintWithDetails | null>(null);
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -124,9 +126,15 @@ export default function Complaints() {
       const existingOpenTickets = await complaintsAPI.getOpenComplaintsBySite(formData.siteId);
 
       if (existingOpenTickets.length > 0) {
-        toast.error(
-          `Cannot create new ticket. There is already an open ticket for this site. Please resolve the existing ticket first.`
-        );
+        const existingTicket = complaints.find((c) => c.id === existingOpenTickets[0].id);
+        if (existingTicket) {
+          setExistingTicketDetails(existingTicket);
+          setShowExistingTicketDialog(true);
+        } else {
+          toast.error(
+            `Cannot create new ticket. There is already an open ticket for this site. Please resolve the existing ticket first.`
+          );
+        }
         return;
       }
 
@@ -459,6 +467,58 @@ export default function Complaints() {
           queryClient.invalidateQueries({ queryKey: ["complaints"] });
         }}
       />
+
+      {/* Existing Open Ticket Dialog */}
+      <Dialog open={showExistingTicketDialog} onOpenChange={setShowExistingTicketDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Ticket Already Open
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">
+                <span className="font-semibold">This site already has an open ticket.</span> You cannot create a new ticket for the same site until the existing one is resolved.
+              </p>
+            </div>
+
+            {existingTicketDetails && (
+              <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Subject</p>
+                  <p className="text-sm text-gray-900 mt-1">{existingTicketDetails.subject}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Status</p>
+                  <Badge className="mt-1 bg-yellow-100 text-yellow-800">{existingTicketDetails.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Created On</p>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {format(new Date(existingTicketDetails.createdTime), "MMM dd, yyyy 'at' hh:mm a")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <p className="text-sm text-gray-600">
+              Please resolve the existing ticket or contact support if you need assistance.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => setShowExistingTicketDialog(false)}
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Understood
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
