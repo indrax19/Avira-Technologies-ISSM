@@ -132,7 +132,7 @@ export default function ComplaintStatusUpdateDialog({
           {/* Remarks */}
           <div className="space-y-2">
             <Label htmlFor="remarks" className="font-semibold">
-              Remarks / Notes (Optional)
+              Reply / Notes (Optional)
             </Label>
             <Textarea
               id="remarks"
