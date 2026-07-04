@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight, X, Info } from "lucide-react";
+import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight, X, Info, MessageSquarePlus } from "lucide-react";
 import StatusHistoryPanel from "./StatusHistoryPanel";
 import SiteDetailsModal from "./SiteDetailsModal";
+import FollowUpsPanel from "./FollowUpsPanel";
 import { toast } from "sonner";
 import { ComplaintWithDetails } from "@/hooks/useComplaints";
 import { complaintsAPI, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
@@ -28,6 +29,7 @@ interface ComplaintsTableProps {
   complaints: ComplaintWithDetails[];
   isLoading: boolean;
   onStatusUpdateClick?: (complaint: ComplaintWithDetails) => void;
+  onFollowUpClick?: (complaint: ComplaintWithDetails) => void;
   currentUserId?: string;
   isAdmin?: boolean;
 }
@@ -35,16 +37,14 @@ interface ComplaintsTableProps {
 const STATUS_MAPPING: Record<ComplaintStatus, keyof typeof STATUS_COLORS> = {
   "Open": "open",
   "In Progress": "in-progress",
-  "Pending": "pending",
-  "On Hold": "on-hold",
+  "Waiting for Response": "waiting",
   "Resolved": "resolved",
 };
 
 const STATUS_OPTIONS: ComplaintStatus[] = [
   "Open",
   "In Progress",
-  "Pending",
-  "On Hold",
+  "Waiting for Response",
   "Resolved",
 ];
 
@@ -60,6 +60,10 @@ const isNewComplaint = (createdTime: string, status: string): boolean => {
   return diffHours < 24;
 };
 
+const hasFollowUps = (followUps?: any[]): boolean => {
+  return followUps && followUps.length > 0;
+};
+
 const formatCreatedTimeWithTZ = (createdTime: string): string => {
   return formatInTimeZone(new Date(createdTime), PAKISTAN_TIMEZONE, "MMM dd, yyyy HH:mm");
 };
@@ -68,6 +72,7 @@ export default function ComplaintsTable({
   complaints,
   isLoading,
   onStatusUpdateClick,
+  onFollowUpClick,
   currentUserId,
   isAdmin,
 }: ComplaintsTableProps) {
@@ -150,6 +155,10 @@ export default function ComplaintsTable({
   const canDeleteComplaint = (complaint: ComplaintWithDetails): boolean => {
     if (isAdmin) return true;
     return complaint.createdBy === currentUserId;
+  };
+
+  const canAddFollowUp = (complaint: ComplaintWithDetails): boolean => {
+    return true;
   };
 
   const handleDelete = async (id: string) => {
@@ -299,11 +308,20 @@ export default function ComplaintsTable({
                           ) : (
                             <ChevronRight className="h-5 w-5 text-slate-600 flex-shrink-0 mt-0.5" />
                           )}
-                          <p className="font-semibold text-slate-900 break-words flex-1">{complaint.subject}</p>
+                          <div className="flex-1">
+                            <p className="font-semibold text-slate-900 break-words">{complaint.subject}</p>
+                            {hasFollowUps(complaint.followUps) && (
+                              <Badge className="mt-1 bg-orange-100 text-orange-800 hover:bg-orange-100">
+                                {complaint.followUps!.length} follow-up{complaint.followUps!.length > 1 ? 's' : ''}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm text-slate-600 break-words">{complaint.description}</p>
                       </button>
-                      {getStatusBadge(complaint.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(complaint.status)}
+                      </div>
                     </div>
 
                     <div className="rounded-lg bg-slate-50 p-3 space-y-2 text-sm">
@@ -333,12 +351,21 @@ export default function ComplaintsTable({
                     </div>
 
                     {isExpanded && (
-                      <div className="border-t border-slate-200 pt-4">
-                        <p className="text-sm font-semibold text-gray-700 mb-3">Status History</p>
-                        <StatusHistoryPanel
-                          statusHistory={complaint.statusHistory}
-                          currentStatus={complaint.status}
-                        />
+                      <div className="border-t border-slate-200 pt-4 space-y-4">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <p className="text-xs font-semibold text-gray-600 mb-2">DESCRIPTION & UPDATES</p>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap break-words mb-3">
+                            {complaint.description}
+                          </p>
+                          <FollowUpsPanel followUps={complaint.followUps} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-3">Status History</p>
+                          <StatusHistoryPanel
+                            statusHistory={complaint.statusHistory}
+                            currentStatus={complaint.status}
+                          />
+                        </div>
                       </div>
                     )}
 
@@ -352,6 +379,17 @@ export default function ComplaintsTable({
                         >
                           <AlertCircle className="h-4 w-4" />
                           Update Status
+                        </Button>
+                      )}
+                      {canAddFollowUp(complaint) && onFollowUpClick && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onFollowUpClick(complaint)}
+                          className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                        >
+                          <MessageSquarePlus className="h-4 w-4" />
+                          Reply
                         </Button>
                       )}
                       {canDeleteComplaint(complaint) && (
@@ -396,7 +434,7 @@ export default function ComplaintsTable({
                           <TableCell>
                             <button
                               onClick={() => setExpandedComplaintId(isExpanded ? null : complaint.id!)}
-                              className="w-full text-left hover:opacity-75 transition-opacity max-w-sm space-y-1 xl:max-w-md"
+                              className="w-full text-left hover:opacity-75 transition-opacity max-w-sm space-y-2 xl:max-w-md"
                             >
                               <div className="flex items-start gap-2">
                                 {isExpanded ? (
@@ -404,7 +442,14 @@ export default function ComplaintsTable({
                                 ) : (
                                   <ChevronRight className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
                                 )}
-                                <p className="font-medium text-gray-900 break-words flex-1">{complaint.subject}</p>
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900 break-words">{complaint.subject}</p>
+                                  {hasFollowUps(complaint.followUps) && (
+                                    <Badge className="mt-1 text-xs bg-orange-100 text-orange-800 hover:bg-orange-100">
+                                      {complaint.followUps!.length} follow-up{complaint.followUps!.length > 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                               <p className="text-xs leading-5 text-gray-500 whitespace-pre-wrap break-words">
                                 {complaint.description}
@@ -446,6 +491,17 @@ export default function ComplaintsTable({
                                   Update Status
                                 </Button>
                               )}
+                              {canAddFollowUp(complaint) && onFollowUpClick && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => onFollowUpClick(complaint)}
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                  title="Reply to ticket"
+                                >
+                                  <MessageSquarePlus className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              )}
                               {canDeleteComplaint(complaint) && (
                                 <Button
                                   size="sm"
@@ -463,12 +519,21 @@ export default function ComplaintsTable({
                         {isExpanded && (
                           <TableRow className="bg-gray-50 hover:bg-gray-50">
                             <TableCell colSpan={8} className="p-4">
-                              <div className="space-y-3">
-                                <p className="text-sm font-semibold text-gray-700">Status History & Timeline</p>
-                                <StatusHistoryPanel
-                                  statusHistory={complaint.statusHistory}
-                                  currentStatus={complaint.status}
-                                />
+                              <div className="space-y-4">
+                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                  <p className="text-sm font-semibold text-gray-700 mb-3">Description & Updates</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words mb-3">
+                                    {complaint.description}
+                                  </p>
+                                  <FollowUpsPanel followUps={complaint.followUps} />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-700 mb-3">Status History & Timeline</p>
+                                  <StatusHistoryPanel
+                                    statusHistory={complaint.statusHistory}
+                                    currentStatus={complaint.status}
+                                  />
+                                </div>
                               </div>
                             </TableCell>
                           </TableRow>

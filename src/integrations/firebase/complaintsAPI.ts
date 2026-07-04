@@ -16,6 +16,7 @@ import { removeUndefined, handleFirestoreError } from "./utils";
 export type ComplaintStatus =
   | "Open"
   | "In Progress"
+  | "Waiting for Response"
   | "Pending"
   | "On Hold"
   | "Resolved";
@@ -26,6 +27,15 @@ export interface StatusHistoryEntry {
   updatedByName?: string;
   timestamp: string;
   remarks?: string;
+}
+
+export interface FollowUp {
+  id?: string;
+  addedBy: string;
+  addedByName?: string;
+  timestamp: string;
+  subject?: string;
+  description: string;
 }
 
 export interface Complaint {
@@ -40,6 +50,7 @@ export interface Complaint {
   createdTime: string;
   status: ComplaintStatus;
   statusHistory: StatusHistoryEntry[];
+  followUps?: FollowUp[];
   resolvedBy?: string;
   resolvedByName?: string;
   resolvedTime?: string;
@@ -49,6 +60,23 @@ export interface Complaint {
 }
 
 export const complaintsAPI = {
+  async getOpenComplaintsBySite(siteId: string) {
+    try {
+      const snapshot = await getDocs(collection(db, "complaints"));
+      return snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((complaint: any) => complaint.siteId === siteId && complaint.status !== "Resolved") as Complaint[];
+    } catch (error: any) {
+      if (handleFirestoreError(error)) {
+        return [];
+      }
+      return [];
+    }
+  },
+
   async getAll() {
     try {
       const q = query(collection(db, "complaints"));
@@ -213,6 +241,38 @@ export const complaintsAPI = {
         error.code === "permission-denied"
           ? "Permission denied. Check your Firestore rules."
           : error.message || "Failed to update complaint status"
+      );
+    }
+  },
+
+  async addFollowUp(
+    id: string,
+    followUp: FollowUp
+  ) {
+    try {
+      const docRef = doc(db, "complaints", id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error("Complaint not found");
+      }
+
+      const complaint = docSnap.data() as Complaint;
+      const followUps = complaint.followUps || [];
+      followUps.push(followUp);
+
+      const updateData: Partial<Complaint> = {
+        followUps,
+        updated_at: new Date().toISOString(),
+      };
+
+      const data = removeUndefined(updateData);
+      await updateDoc(docRef, data);
+    } catch (error: any) {
+      throw new Error(
+        error.code === "permission-denied"
+          ? "Permission denied. Check your Firestore rules."
+          : error.message || "Failed to add follow-up"
       );
     }
   },
