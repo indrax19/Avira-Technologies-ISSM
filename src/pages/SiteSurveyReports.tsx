@@ -18,7 +18,6 @@ import { ArrowLeft, Plus, Eye, Edit, Download } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { addLogoToPDF } from "@/lib/pdfLogoHelper";
 import { toast } from "sonner";
 
 export default function SiteSurveyReports() {
@@ -44,110 +43,135 @@ export default function SiteSurveyReports() {
 
   const downloadPDF = async (reportId: string) => {
     try {
-      const report = reports?.find(r => r.id === reportId);
+      const report = reports?.find((item) => item.id === reportId);
       if (!report) return;
 
-      const pdf = new jsPDF();
-      let yPosition = 20;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let yPosition = 42;
+      const navy = [39, 60, 112] as [number, number, number];
+      const slate = [71, 85, 105] as [number, number, number];
 
-      await addLogoToPDF(pdf);
-      yPosition += 20;
+      pdf.setFillColor(...navy);
+      pdf.rect(0, 0, pageWidth, 35, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(22);
+      pdf.text("SITE SURVEY REPORT", margin, 17);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.text("AVIRA TECHNOLOGIES", margin, 25);
+      pdf.text("CONFIDENTIAL", pageWidth - margin, 25, { align: "right" });
 
-      pdf.setFontSize(18);
-      pdf.text("SITE SURVEY REPORT", 105, yPosition, { align: "center" });
-      yPosition += 12;
+      pdf.setFillColor(245, 247, 250);
+      pdf.roundedRect(margin, yPosition - 7, contentWidth, 17, 2, 2, "F");
+      pdf.setTextColor(...slate);
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("REPORT DATE", margin + 6, yPosition);
+      pdf.text("PREPARED BY", margin + contentWidth / 2, yPosition);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(15, 23, 42);
+      pdf.text(format(new Date(report.reportDate), "dd MMM yyyy"), margin + 6, yPosition + 6);
+      pdf.text(report.preparedBy || "—", margin + contentWidth / 2, yPosition + 6);
+      yPosition += 23;
 
-      pdf.setFontSize(11);
-      pdf.text(`Report Date: ${format(new Date(report.reportDate), "dd MMM yyyy")}`, 15, yPosition);
-      yPosition += 8;
-      pdf.text(`Prepared By: ${report.preparedBy}`, 15, yPosition);
-      yPosition += 12;
+      const drawSectionHeader = (title: string) => {
+        pdf.setFillColor(...navy);
+        pdf.roundedRect(margin, yPosition, contentWidth, 8, 1.5, 1.5, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text(title, margin + 5, yPosition + 5.5);
+        pdf.setTextColor(15, 23, 42);
+        yPosition += 13;
+      };
 
-      pdf.setFontSize(14);
-      pdf.text("SITE INFORMATION", 15, yPosition);
-      yPosition += 8;
-
-      pdf.setFontSize(11);
+      drawSectionHeader("SITE INFORMATION");
       const infoData = [
-        ["Client / Facility:", report.clientFacility],
-        ["Focal Person:", report.focalPerson],
-        ["Contact Number:", report.contactNumber],
-        ["Project Scope:", report.projectScope],
-        ["Survey Type:", report.surveyType],
+        ["Client / Facility", report.clientFacility],
+        ["Focal Person", report.focalPerson],
+        ["Contact Number", report.contactNumber],
+        ["Project Scope", report.projectScope],
+        ["Survey Type", report.surveyType],
       ];
-
-      infoData.forEach(([label, value]) => {
-        pdf.text(label, 15, yPosition);
-        pdf.text(value, 80, yPosition);
+      pdf.setFontSize(9.5);
+      infoData.forEach(([label, value], index) => {
+        if (index % 2 === 0) {
+          pdf.setFillColor(249, 250, 251);
+          pdf.rect(margin, yPosition - 4.5, contentWidth, 7, "F");
+        }
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(...slate);
+        pdf.text(label, margin + 5, yPosition);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(15, 23, 42);
+        pdf.text(pdf.splitTextToSize(value || "—", contentWidth - 65), margin + 58, yPosition);
         yPosition += 7;
       });
-
-      yPosition += 5;
+      yPosition += 7;
 
       if (report.facilityOverview.trim()) {
-        pdf.setFontSize(14);
-        pdf.text("FACILITY OVERVIEW", 15, yPosition);
-        yPosition += 8;
-
-        pdf.setFontSize(11);
-        const splitText = pdf.splitTextToSize(report.facilityOverview, 180);
-        pdf.text(splitText, 15, yPosition);
-        yPosition += splitText.length * 5 + 5;
+        if (yPosition > pageHeight - 55) { pdf.addPage(); yPosition = margin; }
+        drawSectionHeader("FACILITY OVERVIEW");
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9.5);
+        const overview = pdf.splitTextToSize(report.facilityOverview, contentWidth - 10);
+        pdf.text(overview, margin + 5, yPosition);
+        yPosition += overview.length * 5 + 10;
       }
 
-      if (report.gateWiseSummary && report.gateWiseSummary.some(item => item.gateName.trim())) {
-        if (yPosition > 240) {
-          pdf.addPage();
-          yPosition = 20;
-        }
-
-        pdf.setFontSize(14);
-        pdf.text("GATE-WISE SURVEY SUMMARY", 15, yPosition);
-        yPosition += 8;
-
-        const gateTableData = report.gateWiseSummary
-          .filter(item => item.gateName.trim())
-          .map(item => [item.gateName, item.function, item.cameraRequired, item.notes]);
-
+      if (report.gateWiseSummary?.some((item) => item.gateName.trim())) {
+        if (yPosition > pageHeight - 65) { pdf.addPage(); yPosition = margin; }
+        drawSectionHeader("GATE-WISE SURVEY SUMMARY");
         autoTable(pdf, {
           startY: yPosition,
           head: [["Gate Name", "Function", "Camera Required", "Notes"]],
-          body: gateTableData,
+          body: report.gateWiseSummary.filter((item) => item.gateName.trim()).map((item) => [item.gateName, item.function, item.cameraRequired, item.notes]),
+          margin: { left: margin, right: margin },
           theme: "grid",
-          headStyles: { fillColor: [39, 60, 112], textColor: 255, fontStyle: "bold" },
-          margin: { left: 15, right: 15 },
+          headStyles: { fillColor: navy, textColor: 255, fontStyle: "bold", fontSize: 9, cellPadding: 3 },
+          bodyStyles: { fontSize: 8.5, cellPadding: 3, textColor: [30, 41, 59] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: { 0: { cellWidth: 34 }, 1: { cellWidth: 34 }, 2: { cellWidth: 31 }, 3: { cellWidth: 67 } },
         });
-
-        yPosition = (pdf as any).lastAutoTable.finalY + 10;
+        yPosition = (pdf as any).lastAutoTable.finalY + 12;
       }
 
-      if (report.networkCablingRequirements && report.networkCablingRequirements.some(item => item.item.trim())) {
-        if (yPosition > 240) {
-          pdf.addPage();
-          yPosition = 20;
-        }
-
-        pdf.setFontSize(14);
-        pdf.text("NETWORK & CABLING REQUIREMENTS", 15, yPosition);
-        yPosition += 8;
-
-        const networkTableData = report.networkCablingRequirements
-          .filter(item => item.item.trim())
-          .map(item => [item.item, item.quantity, item.purpose]);
-
+      if (report.networkCablingRequirements?.some((item) => item.item.trim())) {
+        if (yPosition > pageHeight - 65) { pdf.addPage(); yPosition = margin; }
+        drawSectionHeader("NETWORK & CABLING REQUIREMENTS");
         autoTable(pdf, {
           startY: yPosition,
           head: [["Item", "Quantity", "Purpose"]],
-          body: networkTableData,
+          body: report.networkCablingRequirements.filter((item) => item.item.trim()).map((item) => [item.item, item.quantity, item.purpose]),
+          margin: { left: margin, right: margin },
           theme: "grid",
-          headStyles: { fillColor: [39, 60, 112], textColor: 255, fontStyle: "bold" },
-          margin: { left: 15, right: 15 },
+          headStyles: { fillColor: navy, textColor: 255, fontStyle: "bold", fontSize: 9, cellPadding: 3 },
+          bodyStyles: { fontSize: 8.5, cellPadding: 3, textColor: [30, 41, 59] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: { 0: { cellWidth: 52 }, 1: { cellWidth: 35 }, 2: { cellWidth: 79 } },
         });
+      }
+
+      const pageCount = (pdf as any).internal.pages.length - 1;
+      for (let page = 1; page <= pageCount; page += 1) {
+        pdf.setPage(page);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(...slate);
+        pdf.text("Avira Technologies · Site Survey Report", margin, pageHeight - 8);
+        pdf.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: "right" });
       }
 
       const fileName = `Survey_Report_${report.clientFacility.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`;
       pdf.save(fileName);
-      toast.success("PDF downloaded successfully");
+      toast.success("Professional PDF downloaded successfully");
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast.error("Failed to download PDF");
