@@ -160,69 +160,118 @@ export default function SiteSurveyReport() {
   const generatePDF = async () => {
     setGeneratingPDF(true);
     try {
-      const pdf = new jsPDF();
-      let yPosition = 20;
+      const pdf = new jsPDF("p", "mm", "a4");
+      let yPosition = 15;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - 2 * margin;
+
+      // Add header background
+      pdf.setFillColor(39, 60, 112);
+      pdf.rect(0, 0, pageWidth, 35, "F");
 
       // Add logo
-      await addLogoToPDF(pdf);
-      yPosition += 20;
+      try {
+        await addLogoToPDF(pdf);
+      } catch (e) {
+        // Logo optional
+      }
 
       // Title
-      pdf.setFontSize(18);
-      pdf.text("SITE SURVEY REPORT", 105, yPosition, { align: "center" });
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont(undefined, "bold");
+      pdf.text("SITE SURVEY REPORT", pageWidth / 2, 22, { align: "center" });
+
+      // Reset text color
+      pdf.setTextColor(0, 0, 0);
+      yPosition = 40;
+
+      // Report metadata bar
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, "normal");
+      pdf.setFillColor(242, 242, 242);
+      pdf.rect(margin, yPosition, contentWidth, 15, "F");
+      pdf.setFont(undefined, "bold");
+      pdf.text(`Report Date: ${format(new Date(reportDate), "dd MMM yyyy")}`, margin + 5, yPosition + 6);
+      pdf.text(`Prepared By: ${preparedBy}`, margin + contentWidth / 2, yPosition + 6);
+      yPosition += 20;
+
+      // Site Information Section
+      pdf.setFillColor(39, 60, 112);
+      pdf.rect(margin, yPosition, contentWidth, 8, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, "bold");
+      pdf.text("SITE INFORMATION", margin + 5, yPosition + 5.5);
+
+      pdf.setTextColor(0, 0, 0);
       yPosition += 12;
 
-      // Report details
-      pdf.setFontSize(11);
-      pdf.text(`Report Date: ${format(new Date(reportDate), "dd MMM yyyy")}`, 15, yPosition);
-      yPosition += 8;
-      pdf.text(`Prepared By: ${preparedBy}`, 15, yPosition);
-      yPosition += 12;
-
-      // Form Information
-      pdf.setFontSize(14);
-      pdf.text("SITE INFORMATION", 15, yPosition);
-      yPosition += 8;
-
-      pdf.setFontSize(11);
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, "normal");
       const infoData = [
-        ["Client / Facility:", clientFacility],
-        ["Focal Person:", focalPerson],
-        ["Contact Number:", contactNumber],
-        ["Project Scope:", projectScope],
-        ["Survey Type:", surveyType],
+        { label: "Client / Facility:", value: clientFacility },
+        { label: "Focal Person:", value: focalPerson },
+        { label: "Contact Number:", value: contactNumber },
+        { label: "Project Scope:", value: projectScope },
+        { label: "Survey Type:", value: surveyType },
       ];
 
-      infoData.forEach(([label, value]) => {
-        pdf.text(label, 15, yPosition);
-        pdf.text(value, 80, yPosition);
-        yPosition += 7;
+      infoData.forEach((item) => {
+        pdf.setFont(undefined, "bold");
+        pdf.text(item.label, margin + 5, yPosition);
+        pdf.setFont(undefined, "normal");
+        const valueX = margin + 60;
+        const maxWidth = contentWidth - 55;
+        const splitValue = pdf.splitTextToSize(item.value, maxWidth);
+        pdf.text(splitValue, valueX, yPosition);
+        yPosition += splitValue.length > 1 ? splitValue.length * 5 + 2 : 7;
       });
 
       yPosition += 5;
 
-      // Facility Overview
+      // Facility Overview Section
       if (facilityOverview.trim()) {
-        pdf.setFontSize(14);
-        pdf.text("FACILITY OVERVIEW", 15, yPosition);
-        yPosition += 8;
+        if (yPosition > pageHeight - 40) {
+          pdf.addPage();
+          yPosition = margin;
+        }
 
-        pdf.setFontSize(11);
-        const splitText = pdf.splitTextToSize(facilityOverview, 180);
-        pdf.text(splitText, 15, yPosition);
-        yPosition += splitText.length * 5 + 5;
+        pdf.setFillColor(39, 60, 112);
+        pdf.rect(margin, yPosition, contentWidth, 8, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, "bold");
+        pdf.text("FACILITY OVERVIEW", margin + 5, yPosition + 5.5);
+
+        pdf.setTextColor(0, 0, 0);
+        yPosition += 12;
+
+        pdf.setFontSize(10);
+        pdf.setFont(undefined, "normal");
+        const splitText = pdf.splitTextToSize(facilityOverview, contentWidth - 10);
+        pdf.text(splitText, margin + 5, yPosition);
+        yPosition += splitText.length * 5 + 8;
       }
 
       // Gate-Wise Survey Summary
       if (gateWiseSummary.some(item => item.gateName.trim())) {
-        if (yPosition > 240) {
+        if (yPosition > pageHeight - 60) {
           pdf.addPage();
-          yPosition = 20;
+          yPosition = margin;
         }
 
-        pdf.setFontSize(14);
-        pdf.text("GATE-WISE SURVEY SUMMARY", 15, yPosition);
-        yPosition += 8;
+        pdf.setFillColor(39, 60, 112);
+        pdf.rect(margin, yPosition, contentWidth, 8, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, "bold");
+        pdf.text("GATE-WISE SURVEY SUMMARY", margin + 5, yPosition + 5.5);
+
+        pdf.setTextColor(0, 0, 0);
+        yPosition += 10;
 
         const gateTableData = gateWiseSummary
           .filter(item => item.gateName.trim())
@@ -232,9 +281,27 @@ export default function SiteSurveyReport() {
           startY: yPosition,
           head: [["Gate Name", "Function", "Camera Required", "Notes"]],
           body: gateTableData,
+          margin: { left: margin, right: margin },
           theme: "grid",
-          headStyles: { fillColor: [39, 60, 112], textColor: 255, fontStyle: "bold" },
-          margin: { left: 15, right: 15 },
+          headStyles: {
+            fillColor: [39, 60, 112],
+            textColor: 255,
+            fontStyle: "bold",
+            fontSize: 10,
+          },
+          bodyStyles: {
+            fontSize: 9,
+            cellPadding: 3,
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
+          columnStyles: {
+            0: { cellWidth: 35 },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 60 },
+          },
         });
 
         yPosition = (pdf as any).lastAutoTable.finalY + 10;
@@ -242,14 +309,20 @@ export default function SiteSurveyReport() {
 
       // Network & Cabling Requirements
       if (networkCablingRequirements.some(item => item.item.trim())) {
-        if (yPosition > 240) {
+        if (yPosition > pageHeight - 60) {
           pdf.addPage();
-          yPosition = 20;
+          yPosition = margin;
         }
 
-        pdf.setFontSize(14);
-        pdf.text("NETWORK & CABLING REQUIREMENTS", 15, yPosition);
-        yPosition += 8;
+        pdf.setFillColor(39, 60, 112);
+        pdf.rect(margin, yPosition, contentWidth, 8, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, "bold");
+        pdf.text("NETWORK & CABLING REQUIREMENTS", margin + 5, yPosition + 5.5);
+
+        pdf.setTextColor(0, 0, 0);
+        yPosition += 10;
 
         const networkTableData = networkCablingRequirements
           .filter(item => item.item.trim())
@@ -259,10 +332,45 @@ export default function SiteSurveyReport() {
           startY: yPosition,
           head: [["Item", "Quantity", "Purpose"]],
           body: networkTableData,
+          margin: { left: margin, right: margin },
           theme: "grid",
-          headStyles: { fillColor: [39, 60, 112], textColor: 255, fontStyle: "bold" },
-          margin: { left: 15, right: 15 },
+          headStyles: {
+            fillColor: [39, 60, 112],
+            textColor: 255,
+            fontStyle: "bold",
+            fontSize: 10,
+          },
+          bodyStyles: {
+            fontSize: 9,
+            cellPadding: 3,
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
+          columnStyles: {
+            0: { cellWidth: 50 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 70 },
+          },
         });
+
+        yPosition = (pdf as any).lastAutoTable.finalY + 15;
+      }
+
+      // Footer
+      const pageCount = (pdf as any).internal.pages.length - 1;
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(9);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(
+          `Page ${i} of ${pageCount}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        );
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
       }
 
       const fileName = `Survey_Report_${clientFacility.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`;
@@ -311,47 +419,53 @@ export default function SiteSurveyReport() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/survey-reports")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              {existingReport ? "Edit Survey Report" : "Create Survey Report"}
-            </h1>
-            <p className="text-sm text-slate-600 mt-1">
-              {existingReport ? "Update site survey details" : "Create a new site survey report"}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {existingReport && (
+    <div className="flex flex-col gap-6 p-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Button
-              variant="outline"
-              onClick={() => setShowPreview(!showPreview)}
-              disabled={saveMutation.isPending}
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/survey-reports")}
+              className="hover:bg-white/20"
             >
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-          )}
+            <div>
+              <h1 className="text-3xl font-bold">
+                {existingReport ? "Edit Survey Report" : "Create Survey Report"}
+              </h1>
+              <p className="text-blue-100 mt-2 text-sm">
+                {existingReport ? "Update and manage site survey details" : "Create a comprehensive site survey report"}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {existingReport && (
+              <Button
+                variant="outline"
+                onClick={() => setShowPreview(!showPreview)}
+                disabled={saveMutation.isPending}
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Main Form */}
       <div className="grid gap-6">
         {/* Form Fields Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Survey Information</CardTitle>
+        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <CardTitle className="text-xl text-blue-900">Survey Information</CardTitle>
+            <p className="text-xs text-blue-600 mt-1">Enter basic survey and facility details</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="clientFacility">Client / Facility *</Label>
@@ -437,11 +551,12 @@ export default function SiteSurveyReport() {
         </Card>
 
         {/* Facility Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Facility Overview</CardTitle>
+        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b">
+            <CardTitle className="text-xl text-amber-900">Facility Overview</CardTitle>
+            <p className="text-xs text-amber-600 mt-1">Detailed description of facility layout and features</p>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="facilityOverview">Facility Details</Label>
               <Textarea
@@ -456,13 +571,16 @@ export default function SiteSurveyReport() {
         </Card>
 
         {/* Gate-Wise Survey Summary */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Gate-Wise Survey Summary</CardTitle>
+        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl text-green-900">Gate-Wise Survey Summary</CardTitle>
+              <p className="text-xs text-green-600 mt-1">Document security gates and camera requirements</p>
+            </div>
             <Button
               size="sm"
               onClick={addGateWiseSurveyRow}
-              variant="outline"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Gate
@@ -533,13 +651,16 @@ export default function SiteSurveyReport() {
         </Card>
 
         {/* Network & Cabling Requirements */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Network & Cabling Requirements</CardTitle>
+        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl text-purple-900">Network & Cabling Requirements</CardTitle>
+              <p className="text-xs text-purple-600 mt-1">List infrastructure and network components needed</p>
+            </div>
             <Button
               size="sm"
               onClick={addNetworkCablingRow}
-              variant="outline"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Item
@@ -601,8 +722,8 @@ export default function SiteSurveyReport() {
         </Card>
 
         {/* Action Buttons */}
-        <Card>
-          <CardContent className="pt-6 flex flex-wrap gap-2">
+        <Card className="border-0 shadow-md">
+          <CardContent className="pt-6 flex flex-wrap gap-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg">
             <Button
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
