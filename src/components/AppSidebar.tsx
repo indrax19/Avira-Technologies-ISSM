@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, Users, Truck, Settings, MapPin, Shield, CheckSquare, BookOpen, Receipt, AlertCircle } from "lucide-react";
+import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, Users, Truck, Settings, MapPin, Shield, CheckSquare, BookOpen, Receipt, AlertCircle, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +29,7 @@ const navItems = [
   { title: "Projects Tracking", url: "/projects", icon: CheckSquare, permission: "project-tracking" },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
   { title: "Reports", url: "/reports", icon: FileText, permission: "reports" },
+  { title: "Survey Reports", url: "/survey-reports", icon: ClipboardList, permission: "reports" },
   { title: "Transactions", url: "/transactions", icon: History, permission: "transactions" },
   { title: "Settings", url: "/settings", icon: Settings, permission: "settings" },
 ];
