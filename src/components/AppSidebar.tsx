@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, Users, Truck, Settings, MapPin, Shield, CheckSquare, BookOpen, Receipt, AlertCircle } from "lucide-react";
+import { LayoutDashboard, FolderOpen, ScanBarcode, FileText, History, Package, Users, Truck, Settings, MapPin, Shield, CheckSquare, BookOpen, Receipt, AlertCircle, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -36,6 +36,7 @@ const navItems = [
 const adminItems = [
   { title: "Manage Users", url: "/manage-users", icon: Shield },
   { title: "Profile", url: "/profile", icon: Users },
+  { title: "Survey Reports", url: "/survey-reports", icon: ClipboardList },
 ];
 
 export function AppSidebar() {
