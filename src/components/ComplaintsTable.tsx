@@ -159,7 +159,7 @@ export default function ComplaintsTable({
   };
 
   const canAddFollowUp = (complaint: ComplaintWithDetails): boolean => {
-    return true;
+    return complaint.status !== "Resolved";
   };
 
   const handleDelete = async (id: string) => {
@@ -311,7 +311,7 @@ export default function ComplaintsTable({
                           )}
                           <div className="flex-1">
                             <p className="font-semibold text-slate-900 break-words">{complaint.subject}</p>
-                            {hasFollowUps(complaint.followUps) && (
+                            {complaint.status !== "Resolved" && hasFollowUps(complaint.followUps) && (
                               <Badge className="mt-1 bg-orange-100 text-orange-800 hover:bg-orange-100">
                                 {complaint.followUps!.length} follow-up{complaint.followUps!.length > 1 ? 's' : ''}
                               </Badge>
@@ -445,7 +445,7 @@ export default function ComplaintsTable({
                                 )}
                                 <div className="flex-1">
                                   <p className="font-medium text-gray-900 break-words">{complaint.subject}</p>
-                                  {hasFollowUps(complaint.followUps) && (
+                                  {complaint.status !== "Resolved" && hasFollowUps(complaint.followUps) && (
                                     <Badge className="mt-1 text-xs bg-orange-100 text-orange-800 hover:bg-orange-100">
                                       {complaint.followUps!.length} follow-up{complaint.followUps!.length > 1 ? 's' : ''}
                                     </Badge>
