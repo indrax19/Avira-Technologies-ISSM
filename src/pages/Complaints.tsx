@@ -511,10 +511,20 @@ export default function Complaints() {
 
           <DialogFooter>
             <Button
+              variant="outline"
               onClick={() => setShowExistingTicketDialog(false)}
-              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
             >
               Understood
+            </Button>
+            <Button
+              onClick={() => {
+                setShowExistingTicketDialog(false);
+                setSelectedComplaintForFollowUp(existingTicketDetails);
+                setShowFollowUpDialog(true);
+              }}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Follow up
             </Button>
           </DialogFooter>
         </DialogContent>
