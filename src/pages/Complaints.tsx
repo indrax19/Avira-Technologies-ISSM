@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useQueryClient } from "@tanstack/react-query";
 import { technicalProjectsAPI, type TechnicalProject } from "@/integrations/firebase/technicalProjectsAPI";
 import { siteDetailsAPI, type SiteDetails } from "@/integrations/firebase/siteDetailsAPI";
@@ -23,6 +26,14 @@ import {
   Loader2,
   CheckCircle,
   Clock,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  X,
+  TrendingUp,
+  MapPin,
+  CalendarDays,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAllComplaints, type ComplaintWithDetails } from "@/hooks/useComplaints";
@@ -30,6 +41,29 @@ import ComplaintsTable from "@/components/ComplaintsTable";
 import { complaintsAPI, type Complaint, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
 import ComplaintStatusUpdateDialog from "@/components/ComplaintStatusUpdateDialog";
 import FollowUpDialog from "@/components/FollowUpDialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type IssueType = "Camera Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
+
+const issueTypes: IssueType[] = ["Camera Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
+
+function getIssueType(complaint: ComplaintWithDetails): IssueType {
+  const text = `${complaint.subject} ${complaint.description}`.toLowerCase();
+  if (text.includes("camera") || text.includes("nvr") || text.includes("cctv")) return "Camera Disconnected";
+  if (text.includes("anydesk") || text.includes("remote desktop") || text.includes("rustdesk")) return "AnyDesk Issue";
+  if (text.includes("offline") || text.includes("site down") || text.includes("site is down")) return "Site Offline";
+  if (text.includes("internet") || text.includes("network") || text.includes("wifi") || text.includes("wi-fi")) return "Internet Issue";
+  return "Other";
+}
+
+function downloadBlob(content: BlobPart, filename: string, type: string) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function Complaints() {
   const navigate = useNavigate();
@@ -46,6 +80,7 @@ export default function Complaints() {
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
   const [showExistingTicketDialog, setShowExistingTicketDialog] = useState(false);
   const [existingTicketDetails, setExistingTicketDetails] = useState<ComplaintWithDetails | null>(null);
+  const [reportFilters, setReportFilters] = useState({ date: "", site: "all", issueType: "all", status: "all" });
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -192,6 +227,69 @@ export default function Complaints() {
   const openComplaints = userVisibleComplaints.filter((c) => c.status !== "Resolved").length;
   const resolvedComplaints = userVisibleComplaints.filter((c) => c.status === "Resolved").length;
 
+  const reportRows = useMemo(() => userVisibleComplaints.map((complaint) => ({
+    complaint,
+    issueType: getIssueType(complaint),
+  })), [userVisibleComplaints]);
+
+  const filteredReportRows = useMemo(() => reportRows.filter(({ complaint, issueType }) => (
+    (!reportFilters.date || complaint.date === reportFilters.date || complaint.createdTime.startsWith(reportFilters.date)) &&
+    (reportFilters.site === "all" || complaint.siteName === reportFilters.site) &&
+    (reportFilters.issueType === "all" || issueType === reportFilters.issueType) &&
+    (reportFilters.status === "all" || complaint.status === reportFilters.status)
+  )), [reportRows, reportFilters]);
+
+  const issueCounts = issueTypes.map((type) => ({
+    type,
+    count: filteredReportRows.filter((row) => row.issueType === type).length,
+  }));
+  const siteCounts = filteredReportRows.reduce<Record<string, number>>((counts, { complaint }) => {
+    const site = complaint.siteName || "Unknown site";
+    counts[site] = (counts[site] || 0) + 1;
+    return counts;
+  }, {});
+  const problematicSites = Object.entries(siteCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+  const recentCutoff = new Date();
+  recentCutoff.setDate(recentCutoff.getDate() - 7);
+  const repeatedIssues = Object.entries(filteredReportRows
+    .filter(({ complaint }) => new Date(complaint.createdTime || complaint.date).getTime() >= recentCutoff.getTime())
+    .reduce<Record<string, number>>((counts, { complaint, issueType }) => {
+      const key = `${complaint.siteName || "Unknown site"}|${issueType}`;
+      counts[key] = (counts[key] || 0) + 1;
+      return counts;
+    }, {}))
+    .filter(([, count]) => count > 1)
+    .sort(([, a], [, b]) => b - a);
+
+  const exportRows = filteredReportRows.map(({ complaint, issueType }) => [
+    complaint.siteName || "Unknown site",
+    issueType,
+    complaint.subject,
+    complaint.status,
+    complaint.date,
+  ]);
+
+  const exportReport = (format: "xlsx" | "csv" | "pdf") => {
+    const headers = ["Site", "Issue Type", "Subject", "Status", "Date"];
+    const filename = `issue-report-${new Date().toISOString().split("T")[0]}`;
+    if (format === "xlsx") {
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...exportRows]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Issue Report");
+      XLSX.writeFile(workbook, `${filename}.xlsx`);
+    } else if (format === "csv") {
+      const csv = [headers, ...exportRows].map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\\n");
+      downloadBlob(csv, `${filename}.csv`, "text/csv;charset=utf-8");
+    } else {
+      const doc = new jsPDF({ orientation: "landscape" });
+      doc.setFontSize(16);
+      doc.text("Issue Reporting", 14, 16);
+      autoTable(doc, { head: [headers], body: exportRows, startY: 24, styles: { fontSize: 8 } });
+      doc.save(`${filename}.pdf`);
+    }
+    toast.success(`${format.toUpperCase()} report downloaded`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -297,6 +395,92 @@ export default function Complaints() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="gap-4 pb-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-900">
+                <TrendingUp className="h-5 w-5 text-blue-600" /> Issue Reporting
+              </CardTitle>
+              <p className="mt-1 text-sm text-slate-500">Understand issue trends, repeat tickets, and the sites that need attention.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("xlsx")}>
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("csv")}>
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("pdf")}>
+                <FileText className="h-4 w-4 text-red-600" /> PDF
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="h-3.5 w-3.5" /> Date</Label>
+              <Input type="date" value={reportFilters.date} onChange={(e) => setReportFilters({ ...reportFilters, date: e.target.value })} className="bg-white" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" /> Site</Label>
+              <Select value={reportFilters.site} onValueChange={(site) => setReportFilters({ ...reportFilters, site })}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="All sites" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All sites</SelectItem>
+                  {[...new Set(userVisibleComplaints.map((complaint) => complaint.siteName || "Unknown site"))].sort().map((site) => <SelectItem key={site} value={site}>{site}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-slate-500"><Filter className="h-3.5 w-3.5" /> Issue Type</Label>
+              <Select value={reportFilters.issueType} onValueChange={(issueType) => setReportFilters({ ...reportFilters, issueType })}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="All issue types" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All issue types</SelectItem>
+                  {issueTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-500">Status</Label>
+              <Select value={reportFilters.status} onValueChange={(status) => setReportFilters({ ...reportFilters, status })}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="All statuses" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {(["Open", "In Progress", "Waiting for Response", "Pending", "On Hold", "Resolved"] as ComplaintStatus[]).map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {(reportFilters.date || reportFilters.site !== "all" || reportFilters.issueType !== "all" || reportFilters.status !== "all") && (
+            <Button variant="ghost" size="sm" className="w-fit gap-2 text-slate-500" onClick={() => setReportFilters({ date: "", site: "all", issueType: "all", status: "all" })}>
+              <X className="h-3.5 w-3.5" /> Clear filters
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+            <div className="rounded-xl border border-slate-100 p-4">
+              <div className="mb-4 flex items-center justify-between"><h3 className="font-semibold text-slate-900">Issues by type</h3><span className="text-xs text-slate-500">{filteredReportRows.length} matching</span></div>
+              <div className="space-y-3">
+                {issueCounts.map(({ type, count }) => {
+                  const percentage = filteredReportRows.length ? Math.round((count / filteredReportRows.length) * 100) : 0;
+                  return <div key={type} className="space-y-1.5"><div className="flex justify-between text-sm"><span className="text-slate-600">{type}</span><span className="font-semibold text-slate-900">{count}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${percentage}%` }} /></div></div>;
+                })}
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-100 p-4">
+              <div className="mb-4 flex items-center justify-between"><h3 className="font-semibold text-slate-900">Most problematic sites</h3><MapPin className="h-4 w-4 text-slate-400" /></div>
+              {problematicSites.length ? <div className="space-y-3">{problematicSites.map(([site, count], index) => <div key={site} className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">{index + 1}</span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{site}</span><span className="text-sm font-semibold text-slate-900">{count} issues</span></div>)}</div> : <p className="text-sm text-slate-500">No sites match the selected filters.</p>}
+            </div>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+            <div className="mb-3 flex items-center gap-2"><AlertCircle className="h-4 w-4 text-amber-600" /><h3 className="font-semibold text-amber-900">Repeated issues · last 7 days</h3></div>
+            {repeatedIssues.length ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{repeatedIssues.slice(0, 6).map(([key, count]) => { const [site, type] = key.split("|"); return <div key={key} className="rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm"><p className="font-medium text-slate-800">{site}</p><p className="text-xs text-amber-700">{type} · {count} reports</p></div>; })}</div> : <p className="text-sm text-amber-800">No repeated issues found in the last 7 days.</p>}
+          </div>
+        </CardContent>
+      </Card>
 
       <ComplaintsTable
         complaints={userVisibleComplaints}
