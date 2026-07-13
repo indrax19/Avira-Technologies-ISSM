@@ -177,7 +177,7 @@ export default function Scan() {
     onSuccess: () => {
       queryClient.invalidateQueries();
       toast.success("Item added to inventory!");
-      resetDialog();
+      resetDialog(true);
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to add item");
@@ -206,7 +206,7 @@ export default function Scan() {
     },
   });
 
-  const resetDialog = () => {
+  const resetDialog = (preserveAddSelection = false) => {
     setDialogOpen(false);
     setScannedCode(null);
     setFoundItem(null);
@@ -214,10 +214,19 @@ export default function Scan() {
     setItemName("");
     setRecipient("");
     setNotes("");
-    setSubcategoryId("");
+    if (!preserveAddSelection) {
+      setCategoryId("");
+      setSubcategoryId("");
+      setStoreName("");
+    }
     setSerialNumbers([]);
     setSerialNumberInput("");
-    setStoreName("");
+  };
+
+  const scanAnotherItem = () => {
+    setDialogOpen(false);
+    setScannedCode(null);
+    setCameraActive(inputMode === "camera");
   };
 
   return (
@@ -392,15 +401,18 @@ export default function Scan() {
               </Select>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={resetDialog}>Cancel</Button>
-            <Button
-              onClick={() => addMutation.mutate()}
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between sm:gap-0">
+            <Button variant="ghost" onClick={scanAnotherItem} className="w-full sm:w-auto">Scan Another</Button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Button variant="outline" onClick={resetDialog}>Cancel</Button>
+              <Button
+                onClick={() => addMutation.mutate()}
               disabled={addMutation.isPending || !categoryId || !subcategoryId || serialNumbers.length === 0 || !storeName.trim()}
               className="gap-2"
             >
-              {addMutation.isPending ? "Adding..." : "Add to Inventory"} {serialNumbers.length > 0 && `(${serialNumbers.length})`}
-            </Button>
+                {addMutation.isPending ? "Adding..." : "Add to Inventory"} {serialNumbers.length > 0 && `(${serialNumbers.length})`}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
