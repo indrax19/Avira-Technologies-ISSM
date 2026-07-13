@@ -465,6 +465,7 @@ export default function Complaints() {
         onSuccess={() => {
           setSelectedComplaintForFollowUp(null);
           queryClient.invalidateQueries({ queryKey: ["complaints"] });
+          navigate("/complaints");
         }}
       />
 
