@@ -651,18 +651,21 @@ export default function Complaints() {
       </Dialog>
 
       <Dialog open={Boolean(reportDrilldown)} onOpenChange={(open) => !open && setReportDrilldown(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-4xl flex-col overflow-hidden p-4 sm:p-6">
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle>{reportDrilldown?.title}</DialogTitle>
             <DialogDescription>{reportDrilldown?.rows.length || 0} matching issue{reportDrilldown?.rows.length === 1 ? "" : "s"}</DialogDescription>
           </DialogHeader>
-          <Table>
-            <TableHeader><TableRow><TableHead>Site</TableHead><TableHead>Issue Type</TableHead><TableHead>Subject</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {reportDrilldown?.rows.map((complaint) => <TableRow key={complaint.id}><TableCell className="font-medium">{complaint.siteName || "Unknown site"}</TableCell><TableCell>{getIssueType(complaint)}</TableCell><TableCell className="max-w-[260px] truncate">{complaint.subject}</TableCell><TableCell><Badge variant={complaint.status === "Resolved" ? "secondary" : "default"}>{complaint.status}</Badge></TableCell><TableCell>{complaint.date}</TableCell></TableRow>)}
-            </TableBody>
-          </Table>
-          {!reportDrilldown?.rows.length && <p className="py-8 text-center text-sm text-slate-500">No issues found for this selection.</p>}
+          {reportDrilldown?.rows.length ? (
+            <div className="min-h-0 overflow-auto">
+              <Table className="min-w-[720px]">
+                <TableHeader><TableRow><TableHead>Site</TableHead><TableHead>Issue Type</TableHead><TableHead>Subject</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {reportDrilldown.rows.map((complaint) => <TableRow key={complaint.id}><TableCell className="font-medium">{complaint.siteName || "Unknown site"}</TableCell><TableCell>{getIssueType(complaint)}</TableCell><TableCell className="max-w-[260px] truncate">{complaint.subject}</TableCell><TableCell><Badge variant={complaint.status === "Resolved" ? "secondary" : "default"}>{complaint.status}</Badge></TableCell><TableCell>{complaint.date}</TableCell></TableRow>)}
+                </TableBody>
+              </Table>
+            </div>
+          ) : <p className="py-8 text-center text-sm text-slate-500">No issues found for this selection.</p>}
         </DialogContent>
       </Dialog>
 
