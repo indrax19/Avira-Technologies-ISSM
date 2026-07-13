@@ -43,9 +43,9 @@ import ComplaintStatusUpdateDialog from "@/components/ComplaintStatusUpdateDialo
 import FollowUpDialog from "@/components/FollowUpDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type IssueType = "Camera Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
+type IssueType = "Camera Disconnected" | "HDMI Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
 
-const issueTypes: IssueType[] = ["Camera Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
+const issueTypes: IssueType[] = ["Camera Disconnected", "HDMI Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
 const complaintSubjectOptions = [
   "Camera Disconnected",
   "AnyDesk Issue",
@@ -58,6 +58,7 @@ const complaintSubjectOptions = [
 function getIssueType(complaint: ComplaintWithDetails): IssueType {
   const text = `${complaint.subject} ${complaint.description}`.toLowerCase();
   if (text.includes("camera") || text.includes("nvr") || text.includes("cctv")) return "Camera Disconnected";
+  if (text.includes("hdmi")) return "HDMI Disconnected";
   if (text.includes("anydesk") || text.includes("remote desktop") || text.includes("rustdesk")) return "AnyDesk Issue";
   if (text.includes("offline") || text.includes("site down") || text.includes("site is down")) return "Site Offline";
   if (text.includes("internet") || text.includes("network") || text.includes("wifi") || text.includes("wi-fi")) return "Internet Issue";
