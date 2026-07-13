@@ -46,6 +46,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 type IssueType = "Camera Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
 
 const issueTypes: IssueType[] = ["Camera Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
+const complaintSubjectOptions = [
+  "Camera Disconnected",
+  "AnyDesk Issue",
+  "Site Offline",
+  "Internet Issue",
+  "System Performance Issue",
+  "Access or Login Issue",
+];
 
 function getIssueType(complaint: ComplaintWithDetails): IssueType {
   const text = `${complaint.subject} ${complaint.description}`.toLowerCase();
@@ -81,6 +89,8 @@ export default function Complaints() {
   const [showExistingTicketDialog, setShowExistingTicketDialog] = useState(false);
   const [existingTicketDetails, setExistingTicketDetails] = useState<ComplaintWithDetails | null>(null);
   const [reportFilters, setReportFilters] = useState({ date: "", site: "all", issueType: "all", status: "all" });
+  const [subjectMode, setSubjectMode] = useState<"preset" | "custom">("preset");
+  const [reportDrilldown, setReportDrilldown] = useState<{ title: string; rows: ComplaintWithDetails[] } | null>(null);
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -205,6 +215,7 @@ export default function Complaints() {
         description: "",
         date: new Date().toISOString().split('T')[0],
       });
+      setSubjectMode("preset");
       setShowAddDialog(false);
       queryClient.invalidateQueries({ queryKey: ["complaints"] });
     } catch (error: any) {
@@ -396,6 +407,7 @@ export default function Complaints() {
         </Card>
       </div>
 
+      {isAdmin && (
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="gap-4 pb-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -466,13 +478,13 @@ export default function Complaints() {
               <div className="space-y-3">
                 {issueCounts.map(({ type, count }) => {
                   const percentage = filteredReportRows.length ? Math.round((count / filteredReportRows.length) * 100) : 0;
-                  return <div key={type} className="space-y-1.5"><div className="flex justify-between text-sm"><span className="text-slate-600">{type}</span><span className="font-semibold text-slate-900">{count}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${percentage}%` }} /></div></div>;
+                  return <button key={type} type="button" className="block w-full space-y-1.5 rounded-lg p-1 text-left transition-colors hover:bg-blue-50" onClick={() => setReportDrilldown({ title: `${type} issues`, rows: filteredReportRows.filter((row) => row.issueType === type).map((row) => row.complaint) })}><div className="flex justify-between text-sm"><span className="text-slate-600">{type}</span><span className="font-semibold text-slate-900">{count}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${percentage}%` }} /></div></button>;
                 })}
               </div>
             </div>
             <div className="rounded-xl border border-slate-100 p-4">
               <div className="mb-4 flex items-center justify-between"><h3 className="font-semibold text-slate-900">Most problematic sites</h3><MapPin className="h-4 w-4 text-slate-400" /></div>
-              {problematicSites.length ? <div className="space-y-3">{problematicSites.map(([site, count], index) => <div key={site} className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">{index + 1}</span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{site}</span><span className="text-sm font-semibold text-slate-900">{count} issues</span></div>)}</div> : <p className="text-sm text-slate-500">No sites match the selected filters.</p>}
+              {problematicSites.length ? <div className="space-y-3">{problematicSites.map(([site, count], index) => <button type="button" key={site} className="flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-blue-50" onClick={() => setReportDrilldown({ title: `${site} issues`, rows: filteredReportRows.filter(({ complaint }) => (complaint.siteName || "Unknown site") === site).map((row) => row.complaint) })}><span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">{index + 1}</span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{site}</span><span className="text-sm font-semibold text-slate-900">{count} issues</span></button>)}</div> : <p className="text-sm text-slate-500">No sites match the selected filters.</p>}
             </div>
           </div>
           <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
@@ -481,6 +493,7 @@ export default function Complaints() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       <ComplaintsTable
         complaints={userVisibleComplaints}
@@ -557,16 +570,23 @@ export default function Complaints() {
 
             {/* Subject */}
             <div className="space-y-2">
-              <Label htmlFor="subject" className="font-semibold">
-                Subject *
-              </Label>
-              <Input
-                id="subject"
-                placeholder="Enter complaint subject"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                maxLength={200}
-              />
+              <Label htmlFor="subject" className="font-semibold">Subject *</Label>
+              <Select value={subjectMode === "custom" ? "custom" : formData.subject} onValueChange={(value) => {
+                if (value === "custom") {
+                  setSubjectMode("custom");
+                  setFormData({ ...formData, subject: "" });
+                } else {
+                  setSubjectMode("preset");
+                  setFormData({ ...formData, subject: value });
+                }
+              }}>
+                <SelectTrigger id="subject"><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                <SelectContent>
+                  {complaintSubjectOptions.map((subject) => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
+                  <SelectItem value="custom">Type a custom subject</SelectItem>
+                </SelectContent>
+              </Select>
+              {subjectMode === "custom" && <Input id="custom-subject" autoFocus placeholder="Enter complaint subject" value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} maxLength={200} />}
               <p className="text-xs text-gray-500">{formData.subject.length}/200</p>
             </div>
 
@@ -627,6 +647,22 @@ export default function Complaints() {
               Create Complaint
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(reportDrilldown)} onOpenChange={(open) => !open && setReportDrilldown(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{reportDrilldown?.title}</DialogTitle>
+            <DialogDescription>{reportDrilldown?.rows.length || 0} matching issue{reportDrilldown?.rows.length === 1 ? "" : "s"}</DialogDescription>
+          </DialogHeader>
+          <Table>
+            <TableHeader><TableRow><TableHead>Site</TableHead><TableHead>Issue Type</TableHead><TableHead>Subject</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {reportDrilldown?.rows.map((complaint) => <TableRow key={complaint.id}><TableCell className="font-medium">{complaint.siteName || "Unknown site"}</TableCell><TableCell>{getIssueType(complaint)}</TableCell><TableCell className="max-w-[260px] truncate">{complaint.subject}</TableCell><TableCell><Badge variant={complaint.status === "Resolved" ? "secondary" : "default"}>{complaint.status}</Badge></TableCell><TableCell>{complaint.date}</TableCell></TableRow>)}
+            </TableBody>
+          </Table>
+          {!reportDrilldown?.rows.length && <p className="py-8 text-center text-sm text-slate-500">No issues found for this selection.</p>}
         </DialogContent>
       </Dialog>
 
