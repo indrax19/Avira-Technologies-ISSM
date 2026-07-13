@@ -25,10 +25,12 @@ export default function SiteSurveyReports() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
-  const { data: reports, isLoading } = useQuery({
+  const { data: reports, isLoading, refetch } = useQuery({
     queryKey: ["survey-reports"],
     queryFn: siteSurveyReportAPI.getAll,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: "stale",
   });
 
   const filtered = useMemo(() => {

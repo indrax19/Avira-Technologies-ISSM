@@ -128,13 +128,21 @@ export default function SiteSurveyReport() {
 
       if (existingReport?.id) {
         await siteSurveyReportAPI.update(existingReport.id, reportData);
-        queryClient.invalidateQueries({ queryKey: ["survey-report", existingReport.id] });
+        await queryClient.invalidateQueries({ queryKey: ["survey-reports"] });
         toast.success("Report updated successfully");
       } else {
-        const result = await siteSurveyReportAPI.create(reportData);
-        queryClient.invalidateQueries({ queryKey: ["survey-reports"] });
-        navigate(`/survey-reports/${result.id}`);
-        toast.success("Report created successfully");
+        try {
+          const result = await siteSurveyReportAPI.create(reportData);
+          if (!result?.id) {
+            throw new Error("Failed to create report - no ID returned");
+          }
+          await queryClient.invalidateQueries({ queryKey: ["survey-reports"] });
+          toast.success("Report created successfully");
+          navigate("/survey-reports");
+        } catch (error: any) {
+          toast.error(error.message || "Failed to create report");
+          throw error;
+        }
       }
     },
   });
