@@ -696,12 +696,12 @@ export default function Complaints() {
       </Dialog>
 
       <Dialog open={showIssuePermissionDialog} onOpenChange={setShowIssuePermissionDialog}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-hidden p-4 sm:p-6">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden p-4 sm:p-6">
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-blue-600" /> Manage Issue Reporting Access</DialogTitle>
             <DialogDescription>Select the users who can view Issue Reporting. Admins already have full access.</DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1">
             {permissionUsersLoading ? <p className="py-8 text-center text-sm text-slate-500">Loading users...</p> : permissionUsers.length ? permissionUsers.map((user) => (
               <label key={user.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
                 <input type="checkbox" checked={selectedIssueReportUsers.has(user.id)} onChange={() => setSelectedIssueReportUsers((current) => {
@@ -714,9 +714,9 @@ export default function Complaints() {
               </label>
             )) : <p className="py-8 text-center text-sm text-slate-500">No regular users found.</p>}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowIssuePermissionDialog(false)} disabled={permissionSaving}>Cancel</Button>
-            <Button onClick={saveIssuePermissions} disabled={permissionUsersLoading || permissionSaving} className="bg-blue-600 text-white hover:bg-blue-700">{permissionSaving ? "Saving..." : "Save Access"}</Button>
+          <DialogFooter className="shrink-0 gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setShowIssuePermissionDialog(false)} disabled={permissionSaving} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={saveIssuePermissions} disabled={permissionUsersLoading || permissionSaving} className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto">{permissionSaving ? "Saving..." : "Save Access"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
