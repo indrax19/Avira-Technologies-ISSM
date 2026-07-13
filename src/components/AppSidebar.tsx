@@ -29,6 +29,7 @@ const navItems = [
   { title: "Projects Tracking", url: "/projects", icon: CheckSquare, permission: "project-tracking" },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
   { title: "Reports", url: "/reports", icon: FileText, permission: "reports" },
+  { title: "Survey Reports", url: "/survey-reports", icon: ClipboardList, permission: "survey-reports" },
   { title: "Transactions", url: "/transactions", icon: History, permission: "transactions" },
   { title: "Settings", url: "/settings", icon: Settings, permission: "settings" },
 ];
@@ -36,7 +37,6 @@ const navItems = [
 const adminItems = [
   { title: "Manage Users", url: "/manage-users", icon: Shield },
   { title: "Profile", url: "/profile", icon: Users },
-  { title: "Survey Reports", url: "/survey-reports", icon: ClipboardList },
 ];
 
 export function AppSidebar() {

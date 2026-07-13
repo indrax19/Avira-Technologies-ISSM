@@ -34,18 +34,20 @@ import {
   TrendingUp,
   MapPin,
   CalendarDays,
+  UserCog,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAllComplaints, type ComplaintWithDetails } from "@/hooks/useComplaints";
 import ComplaintsTable from "@/components/ComplaintsTable";
 import { complaintsAPI, type Complaint, type ComplaintStatus } from "@/integrations/firebase/complaintsAPI";
+import { usersAPI, type User } from "@/integrations/firebase/usersAPI";
 import ComplaintStatusUpdateDialog from "@/components/ComplaintStatusUpdateDialog";
 import FollowUpDialog from "@/components/FollowUpDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type IssueType = "Camera Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
+type IssueType = "Camera Disconnected" | "HDMI Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
 
-const issueTypes: IssueType[] = ["Camera Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
+const issueTypes: IssueType[] = ["Camera Disconnected", "HDMI Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
 const complaintSubjectOptions = [
   "Camera Disconnected",
   "AnyDesk Issue",
@@ -58,6 +60,7 @@ const complaintSubjectOptions = [
 function getIssueType(complaint: ComplaintWithDetails): IssueType {
   const text = `${complaint.subject} ${complaint.description}`.toLowerCase();
   if (text.includes("camera") || text.includes("nvr") || text.includes("cctv")) return "Camera Disconnected";
+  if (text.includes("hdmi")) return "HDMI Disconnected";
   if (text.includes("anydesk") || text.includes("remote desktop") || text.includes("rustdesk")) return "AnyDesk Issue";
   if (text.includes("offline") || text.includes("site down") || text.includes("site is down")) return "Site Offline";
   if (text.includes("internet") || text.includes("network") || text.includes("wifi") || text.includes("wi-fi")) return "Internet Issue";
@@ -76,7 +79,7 @@ function downloadBlob(content: BlobPart, filename: string, type: string) {
 export default function Complaints() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin, appUser } = useAuth();
+  const { isAdmin, appUser, hasPermission } = useAuth();
   const [projects, setProjects] = useState<TechnicalProject[]>([]);
   const [allSites, setAllSites] = useState<SiteDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,6 +94,11 @@ export default function Complaints() {
   const [reportFilters, setReportFilters] = useState({ date: "", site: "all", issueType: "all", status: "all" });
   const [subjectMode, setSubjectMode] = useState<"preset" | "custom">("preset");
   const [reportDrilldown, setReportDrilldown] = useState<{ title: string; rows: ComplaintWithDetails[] } | null>(null);
+  const [showIssuePermissionDialog, setShowIssuePermissionDialog] = useState(false);
+  const [permissionUsers, setPermissionUsers] = useState<User[]>([]);
+  const [selectedIssueReportUsers, setSelectedIssueReportUsers] = useState<Set<string>>(new Set());
+  const [permissionUsersLoading, setPermissionUsersLoading] = useState(false);
+  const [permissionSaving, setPermissionSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -280,6 +288,40 @@ export default function Complaints() {
     complaint.date,
   ]);
 
+  const openIssuePermissionDialog = async () => {
+    setShowIssuePermissionDialog(true);
+    setPermissionUsersLoading(true);
+    try {
+      const users = (await usersAPI.getAll()).filter((user) => user.role !== "admin");
+      setPermissionUsers(users);
+      setSelectedIssueReportUsers(new Set(users.filter((user) => user.permissions?.includes("issue-reporting")).map((user) => user.id)));
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load users");
+    } finally {
+      setPermissionUsersLoading(false);
+    }
+  };
+
+  const saveIssuePermissions = async () => {
+    setPermissionSaving(true);
+    try {
+      await Promise.all(permissionUsers.map((user) => {
+        const permissions = user.permissions || [];
+        const hasIssuePermission = selectedIssueReportUsers.has(user.id);
+        const nextPermissions = hasIssuePermission
+          ? [...new Set([...permissions, "issue-reporting"])]
+          : permissions.filter((permission) => permission !== "issue-reporting");
+        return usersAPI.update(user.id, { permissions: nextPermissions });
+      }));
+      toast.success("Issue Reporting permissions updated");
+      setShowIssuePermissionDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update permissions");
+    } finally {
+      setPermissionSaving(false);
+    }
+  };
+
   const exportReport = (format: "xlsx" | "csv" | "pdf") => {
     const headers = ["Site", "Issue Type", "Subject", "Status", "Date"];
     const filename = `issue-report-${new Date().toISOString().split("T")[0]}`;
@@ -407,7 +449,7 @@ export default function Complaints() {
         </Card>
       </div>
 
-      {isAdmin && (
+      {(isAdmin || hasPermission("issue-reporting")) && (
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="gap-4 pb-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -418,6 +460,9 @@ export default function Complaints() {
               <p className="mt-1 text-sm text-slate-500">Understand issue trends, repeat tickets, and the sites that need attention.</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {isAdmin && <Button variant="outline" size="sm" className="gap-2" onClick={openIssuePermissionDialog}>
+                <UserCog className="h-4 w-4" /> Manage Access
+              </Button>}
               <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("xlsx")}>
                 <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel
               </Button>
@@ -650,19 +695,48 @@ export default function Complaints() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showIssuePermissionDialog} onOpenChange={setShowIssuePermissionDialog}>
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden p-4 sm:p-6">
+          <DialogHeader className="shrink-0 pr-8">
+            <DialogTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-blue-600" /> Manage Issue Reporting Access</DialogTitle>
+            <DialogDescription>Select the users who can view Issue Reporting. Admins already have full access.</DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1">
+            {permissionUsersLoading ? <p className="py-8 text-center text-sm text-slate-500">Loading users...</p> : permissionUsers.length ? permissionUsers.map((user) => (
+              <label key={user.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50">
+                <input type="checkbox" checked={selectedIssueReportUsers.has(user.id)} onChange={() => setSelectedIssueReportUsers((current) => {
+                  const next = new Set(current);
+                  if (next.has(user.id)) next.delete(user.id); else next.add(user.id);
+                  return next;
+                })} disabled={permissionSaving} className="h-4 w-4 rounded text-blue-600" />
+                <span className="min-w-0 flex-1"><span className="block font-medium text-slate-900">{user.fullName}</span><span className="block truncate text-xs text-slate-500">{user.email}</span></span>
+                <Badge variant="outline">{selectedIssueReportUsers.has(user.id) ? "Allowed" : "No access"}</Badge>
+              </label>
+            )) : <p className="py-8 text-center text-sm text-slate-500">No regular users found.</p>}
+          </div>
+          <DialogFooter className="shrink-0 gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setShowIssuePermissionDialog(false)} disabled={permissionSaving} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={saveIssuePermissions} disabled={permissionUsersLoading || permissionSaving} className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto">{permissionSaving ? "Saving..." : "Save Access"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={Boolean(reportDrilldown)} onOpenChange={(open) => !open && setReportDrilldown(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-4xl flex-col overflow-hidden p-4 sm:p-6">
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle>{reportDrilldown?.title}</DialogTitle>
             <DialogDescription>{reportDrilldown?.rows.length || 0} matching issue{reportDrilldown?.rows.length === 1 ? "" : "s"}</DialogDescription>
           </DialogHeader>
-          <Table>
-            <TableHeader><TableRow><TableHead>Site</TableHead><TableHead>Issue Type</TableHead><TableHead>Subject</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {reportDrilldown?.rows.map((complaint) => <TableRow key={complaint.id}><TableCell className="font-medium">{complaint.siteName || "Unknown site"}</TableCell><TableCell>{getIssueType(complaint)}</TableCell><TableCell className="max-w-[260px] truncate">{complaint.subject}</TableCell><TableCell><Badge variant={complaint.status === "Resolved" ? "secondary" : "default"}>{complaint.status}</Badge></TableCell><TableCell>{complaint.date}</TableCell></TableRow>)}
-            </TableBody>
-          </Table>
-          {!reportDrilldown?.rows.length && <p className="py-8 text-center text-sm text-slate-500">No issues found for this selection.</p>}
+          {reportDrilldown?.rows.length ? (
+            <div className="min-h-0 overflow-auto">
+              <Table className="min-w-[720px]">
+                <TableHeader><TableRow><TableHead>Site</TableHead><TableHead>Issue Type</TableHead><TableHead>Subject</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {reportDrilldown.rows.map((complaint) => <TableRow key={complaint.id}><TableCell className="font-medium">{complaint.siteName || "Unknown site"}</TableCell><TableCell>{getIssueType(complaint)}</TableCell><TableCell className="max-w-[260px] truncate">{complaint.subject}</TableCell><TableCell><Badge variant={complaint.status === "Resolved" ? "secondary" : "default"}>{complaint.status}</Badge></TableCell><TableCell>{complaint.date}</TableCell></TableRow>)}
+                </TableBody>
+              </Table>
+            </div>
+          ) : <p className="py-8 text-center text-sm text-slate-500">No issues found for this selection.</p>}
         </DialogContent>
       </Dialog>
 
