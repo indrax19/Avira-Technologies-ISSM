@@ -444,11 +444,11 @@ export default function TextileSurveyForm({
             <FormGroup label="Bandwidth Requirement Confirmation">
               <div className="space-y-2">
                 {[
-                  { id: "10gb", label: "☐ 10 GB Dedicated bandwidth available/committed by customer" },
+                  { id: "10gb", label: "10 MB Dedicated bandwidth available/committed by customer" },
                   {
                     id: "20gb",
                     label:
-                      "☐ 20–25 GB Shared bandwidth available/committed by customer",
+                      "20–25 MB Shared bandwidth available/committed by customer",
                   },
                 ].map((option) => (
                   <div key={option.id} className="flex items-center gap-3 p-2 rounded">
@@ -516,10 +516,10 @@ export default function TextileSurveyForm({
         <CardContent className="space-y-6 pt-6">
           <div className="space-y-3">
             {[
-              { key: "upsAvailable", label: "☐ UPS backup power available at proposed camera locations" },
-              { key: "cameraSocket", label: "☐ Dedicated power socket available for Camera" },
-              { key: "converterSocket", label: "☐ Dedicated power socket available for Media Converter" },
-              { key: "switchSocket", label: "☐ Dedicated power socket available for Network Switch" },
+              { key: "upsAvailable", label: "UPS backup power available at proposed camera locations" },
+              { key: "cameraSocket", label: "Dedicated power socket available for Camera" },
+              { key: "converterSocket", label: "Dedicated power socket available for Media Converter" },
+              { key: "switchSocket", label: "Dedicated power socket available for Network Switch" },
             ].map((item) => (
               <div key={item.key} className="flex items-center gap-3 p-3 rounded border">
                 <Checkbox
