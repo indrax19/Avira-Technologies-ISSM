@@ -450,39 +450,40 @@ export default function Complaints() {
       </div>
 
       {(isAdmin || hasPermission("issue-reporting")) && (
-      <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="gap-4 pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-xl text-slate-900">
-                <TrendingUp className="h-5 w-5 text-blue-600" /> Issue Reporting
+      <Card className="min-w-0 border-slate-200 shadow-sm">
+        <CardHeader className="gap-4 p-4 pb-4 sm:p-6 sm:pb-4">
+          <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <CardTitle className="flex items-start gap-2 text-xl text-slate-900">
+                <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                <span>Issue Reporting</span>
               </CardTitle>
-              <p className="mt-1 text-sm text-slate-500">Understand issue trends, repeat tickets, and the sites that need attention.</p>
+              <p className="mt-1 text-sm leading-5 text-slate-500">Understand issue trends, repeat tickets, and the sites that need attention.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {isAdmin && <Button variant="outline" size="sm" className="gap-2" onClick={openIssuePermissionDialog}>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              {isAdmin && <Button variant="outline" size="sm" className="col-span-2 w-full gap-2 sm:col-span-1 sm:w-auto" onClick={openIssuePermissionDialog}>
                 <UserCog className="h-4 w-4" /> Manage Access
               </Button>}
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("xlsx")}>
+              <Button variant="outline" size="sm" className="w-full gap-2 sm:w-auto" onClick={() => exportReport("xlsx")}>
                 <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> Excel
               </Button>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("csv")}>
+              <Button variant="outline" size="sm" className="w-full gap-2 sm:w-auto" onClick={() => exportReport("csv")}>
                 <Download className="h-4 w-4" /> CSV
               </Button>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportReport("pdf")}>
+              <Button variant="outline" size="sm" className="w-full gap-2 sm:w-auto" onClick={() => exportReport("pdf")}>
                 <FileText className="h-4 w-4 text-red-600" /> PDF
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-4">
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="h-3.5 w-3.5" /> Date</Label>
-              <Input type="date" value={reportFilters.date} onChange={(e) => setReportFilters({ ...reportFilters, date: e.target.value })} className="bg-white" />
+              <Input type="date" value={reportFilters.date} onChange={(e) => setReportFilters({ ...reportFilters, date: e.target.value })} className="w-full bg-white" />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" /> Site</Label>
               <Select value={reportFilters.site} onValueChange={(site) => setReportFilters({ ...reportFilters, site })}>
-                <SelectTrigger className="bg-white"><SelectValue placeholder="All sites" /></SelectTrigger>
+                <SelectTrigger className="w-full bg-white"><SelectValue placeholder="All sites" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All sites</SelectItem>
                   {[...new Set(userVisibleComplaints.map((complaint) => complaint.siteName || "Unknown site"))].sort().map((site) => <SelectItem key={site} value={site}>{site}</SelectItem>)}
@@ -492,7 +493,7 @@ export default function Complaints() {
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-xs text-slate-500"><Filter className="h-3.5 w-3.5" /> Issue Type</Label>
               <Select value={reportFilters.issueType} onValueChange={(issueType) => setReportFilters({ ...reportFilters, issueType })}>
-                <SelectTrigger className="bg-white"><SelectValue placeholder="All issue types" /></SelectTrigger>
+                <SelectTrigger className="w-full bg-white"><SelectValue placeholder="All issue types" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All issue types</SelectItem>
                   {issueTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
@@ -502,7 +503,7 @@ export default function Complaints() {
             <div className="space-y-1.5">
               <Label className="text-xs text-slate-500">Status</Label>
               <Select value={reportFilters.status} onValueChange={(status) => setReportFilters({ ...reportFilters, status })}>
-                <SelectTrigger className="bg-white"><SelectValue placeholder="All statuses" /></SelectTrigger>
+                <SelectTrigger className="w-full bg-white"><SelectValue placeholder="All statuses" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   {(["Open", "In Progress", "Waiting for Response", "Pending", "On Hold", "Resolved"] as ComplaintStatus[]).map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}
@@ -516,10 +517,10 @@ export default function Complaints() {
             </Button>
           )}
         </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+        <CardContent className="space-y-5 p-4 sm:p-6">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[1.25fr_1fr]">
             <div className="rounded-xl border border-slate-100 p-4">
-              <div className="mb-4 flex items-center justify-between"><h3 className="font-semibold text-slate-900">Issues by type</h3><span className="text-xs text-slate-500">{filteredReportRows.length} matching</span></div>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-slate-900">Issues by type</h3><span className="text-xs text-slate-500">{filteredReportRows.length} matching</span></div>
               <div className="space-y-3">
                 {issueCounts.map(({ type, count }) => {
                   const percentage = filteredReportRows.length ? Math.round((count / filteredReportRows.length) * 100) : 0;
@@ -528,12 +529,12 @@ export default function Complaints() {
               </div>
             </div>
             <div className="rounded-xl border border-slate-100 p-4">
-              <div className="mb-4 flex items-center justify-between"><h3 className="font-semibold text-slate-900">Most problematic sites</h3><MapPin className="h-4 w-4 text-slate-400" /></div>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-slate-900">Most problematic sites</h3><MapPin className="h-4 w-4 text-slate-400" /></div>
               {problematicSites.length ? <div className="space-y-3">{problematicSites.map(([site, count], index) => <button type="button" key={site} className="flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-blue-50" onClick={() => setReportDrilldown({ title: `${site} issues`, rows: filteredReportRows.filter(({ complaint }) => (complaint.siteName || "Unknown site") === site).map((row) => row.complaint) })}><span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">{index + 1}</span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{site}</span><span className="text-sm font-semibold text-slate-900">{count} issues</span></button>)}</div> : <p className="text-sm text-slate-500">No sites match the selected filters.</p>}
             </div>
           </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <div className="mb-3 flex items-center gap-2"><AlertCircle className="h-4 w-4 text-amber-600" /><h3 className="font-semibold text-amber-900">Repeated issues · last 7 days</h3></div>
+          <div className="min-w-0 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0 text-amber-600" /><h3 className="font-semibold text-amber-900">Repeated issues · last 7 days</h3></div>
             {repeatedIssues.length ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{repeatedIssues.slice(0, 6).map(([key, count]) => { const [site, type] = key.split("|"); return <div key={key} className="rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm"><p className="font-medium text-slate-800">{site}</p><p className="text-xs text-amber-700">{type} · {count} reports</p></div>; })}</div> : <p className="text-sm text-amber-800">No repeated issues found in the last 7 days.</p>}
           </div>
         </CardContent>
