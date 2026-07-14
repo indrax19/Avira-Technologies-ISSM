@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Factory, Droplet, Hammer, Bird, Hexagon, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Factory, Droplet, Hammer, GiChicken, Hexagon, MoreHorizontal } from "lucide-react";
 
 export type SurveyCategory = "textile" | "beverage" | "steel" | "hatchery" | "sugar" | "other";
 
@@ -39,7 +39,7 @@ const SURVEY_CATEGORIES: CategoryOption[] = [
     id: "hatchery",
     name: "Hatchery",
     description: "Hatchery facility survey",
-    icon: <Chick className="h-12 w-12" />,
+    icon: <GiChicken className="h-12 w-12" />,
     color: "from-yellow-50 to-yellow-100",
   },
   {
