@@ -119,7 +119,9 @@ export const CategoryCard = memo(function CategoryCard({
                 hoveredCategoryId === cat.id ? "text-amber-600 scale-110" : "text-foreground"
               }`}
             />
-            <span className="font-medium text-foreground">{cat.inventory_items?.length ?? 0} items</span>
+            <span className="font-medium text-foreground">
+              {cat.inventory_items?.filter((item) => item.status === "in").length ?? 0} available items
+            </span>
           </div>
         </div>
       </CardContent>
