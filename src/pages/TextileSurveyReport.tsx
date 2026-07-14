@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   textileSurveyReportAPI,
   TextileSurveyReport,
@@ -18,7 +18,7 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 
 export default function TextileSurveyReportPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id, category } = useParams<{ id?: string; category?: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -36,7 +36,7 @@ export default function TextileSurveyReportPage() {
 
   // Load existing report if editing
   useEffect(() => {
-    if (!id) {
+    if (!id || category) {
       setExistingReport(null);
       return;
     }
@@ -52,7 +52,7 @@ export default function TextileSurveyReportPage() {
         unsubscribeRef.current();
       }
     };
-  }, [id]);
+  }, [id, category]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: TextileSurveyData) => {
@@ -71,7 +71,7 @@ export default function TextileSurveyReportPage() {
 
       if (existingReport?.id) {
         await textileSurveyReportAPI.update(existingReport.id, reportData);
-        await queryClient.invalidateQueries({ queryKey: ["textile-surveys"] });
+        await queryClient.invalidateQueries({ queryKey: ["survey-reports"] });
         toast.success("Report updated successfully");
         navigate("/survey-reports");
       } else {
@@ -80,7 +80,7 @@ export default function TextileSurveyReportPage() {
           if (!result?.id) {
             throw new Error("Failed to create report - no ID returned");
           }
-          await queryClient.invalidateQueries({ queryKey: ["textile-surveys"] });
+          await queryClient.invalidateQueries({ queryKey: ["survey-reports"] });
           toast.success("Report created successfully");
           navigate("/survey-reports");
         } catch (error: any) {

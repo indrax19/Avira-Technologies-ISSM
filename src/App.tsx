@@ -127,8 +127,8 @@ const App = () => (
               <Route path="/survey-reports" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SiteSurveyReports /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports/category" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SurveyReportCategorySelect /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports/new" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SiteSurveyReport /></Suspense></ProtectedRoute>} />
-              <Route path="/survey-reports/new/textile" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><TextileSurveyReport /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports/new/:category" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><TextileSurveyReport /></Suspense></ProtectedRoute>} />
+              <Route path="/survey-reports/edit/textile/:id" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><TextileSurveyReport /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports/:id" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SiteSurveyReport /></Suspense></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute requiredPermission="transactions"><Suspense fallback={<PageLoader />}><Transactions /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute requiredPermission="settings"><Suspense fallback={<PageLoader />}><Settings /></Suspense></ProtectedRoute>} />
