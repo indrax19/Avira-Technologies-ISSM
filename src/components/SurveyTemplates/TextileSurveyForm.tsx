@@ -334,17 +334,17 @@ export default function TextileSurveyForm({
               {
                 id: "dedicated",
                 label:
-                  "☐ Waste exits through one dedicated door AND workers/material enter through a separate door (two distinct openings)",
+                  "Waste exits through one dedicated door AND workers/material enter through a separate door (two distinct openings)",
               },
               {
                 id: "shared",
                 label:
-                  "☐ Waste exit and personnel/material entry share the SAME single door/point",
+                  "Waste exit and personnel/material entry share the SAME single door/point",
               },
               {
                 id: "recycling",
                 label:
-                  "☐ Waste is being brought back into the blow room through the entry point for recycling/re-use (should NOT happen — flag as non-compliant)",
+                  "Waste is being brought back into the blow room through the entry point for recycling/re-use (should NOT happen — flag as non-compliant)",
               },
             ].map((option) => (
               <div key={option.id} className="flex items-start gap-3 p-3 rounded border">
@@ -395,9 +395,9 @@ export default function TextileSurveyForm({
                 <FormGroup label="Internet connection type">
                   <div className="space-y-2">
                     {[
-                      { id: "fiber", label: "☐ Fiber" },
-                      { id: "dsl", label: "☐ DSL/Broadband" },
-                      { id: "wireless", label: "☐ Wireless/Other" },
+                      { id: "fiber", label: "Fiber" },
+                      { id: "dsl", label: "DSL/Broadband" },
+                      { id: "wireless", label: "Wireless/Other" },
                     ].map((type) => (
                       <div key={type.id} className="flex items-center gap-3">
                         <Checkbox
