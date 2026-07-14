@@ -39,7 +39,7 @@ const SURVEY_CATEGORIES: CategoryOption[] = [
     id: "hatchery",
     name: "Hatchery",
     description: "Hatchery facility survey",
-    icon: <Bird className="h-12 w-12" />,
+    icon: <Chick className="h-12 w-12" />,
     color: "from-yellow-50 to-yellow-100",
   },
   {
