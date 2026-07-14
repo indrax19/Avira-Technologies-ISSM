@@ -26,6 +26,31 @@ interface TextileSurveyFormProps {
   isLoading?: boolean;
 }
 
+const SectionHeader = ({ number, title }: { number: number; title: string }) => (
+  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-4 sm:p-5 text-white mb-6 mt-8">
+    <h2 className="text-lg sm:text-xl font-bold">
+      {number}. {title}
+    </h2>
+  </div>
+);
+
+const FormGroup = ({
+  label,
+  children,
+  required = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  required?: boolean;
+}) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">
+      {label} {required && <span className="text-red-500">*</span>}
+    </Label>
+    {children}
+  </div>
+);
+
 export default function TextileSurveyForm({
   initialData = defaultTextileData,
   onSubmit,
@@ -86,22 +111,6 @@ export default function TextileSurveyForm({
     await onSubmit(data);
   };
 
-  const SectionHeader = ({ number, title }: { number: number; title: string }) => (
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-4 sm:p-5 text-white mb-6 mt-8">
-      <h2 className="text-lg sm:text-xl font-bold">
-        {number}. {title}
-      </h2>
-    </div>
-  );
-
-  const FormGroup = ({ label, children, required = false }: any) => (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
-      {children}
-    </div>
-  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
