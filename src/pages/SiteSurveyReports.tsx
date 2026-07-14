@@ -197,7 +197,7 @@ export default function SiteSurveyReports() {
           </div>
         </div>
         <Button
-          onClick={() => navigate("/survey-reports/new")}
+          onClick={() => navigate("/survey-reports/category")}
           className="bg-brand-primary text-white hover:bg-brand-primary/90 shadow-md"
         >
           <Plus className="h-4 w-4 mr-2" />

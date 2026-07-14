@@ -43,6 +43,8 @@ const KnowledgeBaseDocumentView = lazy(() => import("@/pages/KnowledgeBaseDocume
 const Complaints = lazy(() => import("@/pages/Complaints"));
 const SiteSurveyReports = lazy(() => import("@/pages/SiteSurveyReports"));
 const SiteSurveyReport = lazy(() => import("@/pages/SiteSurveyReport"));
+const SurveyReportCategorySelect = lazy(() => import("@/pages/SurveyReportCategorySelect"));
+const TextileSurveyReport = lazy(() => import("@/pages/TextileSurveyReport"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -123,7 +125,10 @@ const App = () => (
               <Route path="/complaints" element={<ProtectedRoute requiredPermission="complaints"><Suspense fallback={<PageLoader />}><Complaints /></Suspense></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute requiredPermission="reports"><Suspense fallback={<PageLoader />}><Reports /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SiteSurveyReports /></Suspense></ProtectedRoute>} />
+              <Route path="/survey-reports/category" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SurveyReportCategorySelect /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports/new" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SiteSurveyReport /></Suspense></ProtectedRoute>} />
+              <Route path="/survey-reports/new/textile" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><TextileSurveyReport /></Suspense></ProtectedRoute>} />
+              <Route path="/survey-reports/new/:category" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><TextileSurveyReport /></Suspense></ProtectedRoute>} />
               <Route path="/survey-reports/:id" element={<ProtectedRoute requiredPermission="survey-reports"><Suspense fallback={<PageLoader />}><SiteSurveyReport /></Suspense></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute requiredPermission="transactions"><Suspense fallback={<PageLoader />}><Transactions /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute requiredPermission="settings"><Suspense fallback={<PageLoader />}><Settings /></Suspense></ProtectedRoute>} />
