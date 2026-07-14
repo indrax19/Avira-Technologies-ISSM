@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { siteSurveyReportAPI } from "@/integrations/firebase/siteSurveyReportAPI";
+import {
+  siteSurveyReportAPI,
+  textileSurveyReportAPI,
+} from "@/integrations/firebase/siteSurveyReportAPI";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Eye, Edit, Download } from "lucide-react";
+import { ArrowLeft, Plus, Eye, Edit, Download, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -41,10 +44,106 @@ export default function SiteSurveyReports() {
     );
   }, [reports, search]);
 
+  const downloadTextilePDF = (report: any) => {
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let yPosition = 18;
+    const navy = [39, 60, 112] as [number, number, number];
+
+    pdf.setFillColor(...navy);
+    pdf.rect(0, 0, pageWidth, 30, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(16);
+    pdf.text("TEXTILE MILL SURVEY REPORT", margin, yPosition);
+    yPosition = 42;
+
+    const addSection = (title: string, rows: string[][]) => {
+      if (yPosition > pageHeight - 45) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+      pdf.setFillColor(...navy);
+      pdf.rect(margin, yPosition, contentWidth, 7, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.text(title, margin + 4, yPosition + 5);
+      yPosition += 12;
+      rows.forEach(([label, value]) => {
+        const wrapped = pdf.splitTextToSize(value || "—", contentWidth - 65);
+        pdf.setTextColor(71, 85, 105);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8.5);
+        pdf.text(label, margin + 4, yPosition);
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(wrapped, margin + 65, yPosition);
+        yPosition += Math.max(5, wrapped.length * 4 + 1);
+      });
+      yPosition += 5;
+    };
+
+    addSection("MILL / FACILITY IDENTIFICATION", [
+      ["Mill Name", report.millName],
+      ["Unit Name / No.", report.unitName],
+      ["Address / City", report.fullAddress],
+      ["Total Units", report.totalUnits],
+      ["Survey Date", report.surveyDate],
+      ["Surveyed By", report.surveyedByName],
+      ["Contact Person", report.millContactPerson],
+      ["Contact No. / Email", report.millContactNumber],
+    ]);
+
+    addSection("BLOW ROOM INVENTORY", (report.blowRooms || []).map((room: any, index: number) => [
+      `Blow Room ${index + 1}`,
+      [room.blowRoomNo, room.entryPoints, room.cameraLocation, room.lightingCondition]
+        .filter(Boolean)
+        .join(" · "),
+    ]));
+
+    addSection("CONNECTIVITY AND POWER", [
+      ["Waste Flow", report.wasteFlowOption],
+      ["Waste Flow Remarks", report.wasteFlowRemarks],
+      ["Internet Available", report.internetAvailable ? "Yes" : "No"],
+      ["Connection Types", (report.connectionTypes || []).join(", ")],
+      ["Internet Quality", report.internetQuality],
+      ["ISP / Provider", report.ispProviderName],
+      ["UPS Available", report.upsAvailable ? "Yes" : "No"],
+      ["UPS Capacity", report.upsCapacity],
+      ["UPS Backup Time", report.upsBackupTime],
+    ]);
+
+    addSection("COMPUTE AND REMARKS", [
+      ["GPU Compute Details", report.gpuCompute],
+      ["General Remarks", report.generalRemarks],
+      ["Surveyor Signature", report.surveyorSignature],
+      ["Customer Representative", report.customerRepresentativeSignature],
+    ]);
+
+    const pageCount = (pdf as any).internal.pages.length - 1;
+    for (let page = 1; page <= pageCount; page += 1) {
+      pdf.setPage(page);
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: "right" });
+    }
+    const fileName = `Textile_Survey_${(report.millName || "Report").replace(/\\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`;
+    pdf.save(fileName);
+  };
+
   const downloadPDF = async (reportId: string) => {
     try {
       const report = reports?.find((item) => item.id === reportId);
       if (!report) return;
+      if (report.category === "textile") {
+        downloadTextilePDF(report);
+        toast.success("Textile survey PDF downloaded");
+        return;
+      }
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -178,6 +277,23 @@ export default function SiteSurveyReports() {
     }
   };
 
+  const deleteReport = async (report: any) => {
+    if (!report.id || !window.confirm("Delete this survey report?")) return;
+
+    try {
+      if (report.category === "textile") {
+        await textileSurveyReportAPI.delete(report.id);
+      } else {
+        await siteSurveyReportAPI.delete(report.id);
+      }
+      await refetch();
+      toast.success("Survey report deleted");
+    } catch (error) {
+      console.error("Error deleting survey report:", error);
+      toast.error("Failed to delete survey report");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -281,6 +397,15 @@ export default function SiteSurveyReports() {
                             title="Download PDF"
                           >
                             <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteReport(report)}
+                            title="Delete report"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

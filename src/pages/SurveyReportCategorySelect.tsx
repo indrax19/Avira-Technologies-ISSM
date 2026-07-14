@@ -128,28 +128,6 @@ export default function SurveyReportCategorySelect() {
         </div>
       </div>
 
-      {/* Info Section */}
-      <Card className="max-w-6xl mx-auto w-full border-0 shadow-md">
-        <CardHeader className="bg-blue-50 border-b">
-          <CardTitle className="text-base sm:text-lg text-blue-900">
-            Survey Report Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4 sm:pt-6 text-xs sm:text-sm text-slate-600 space-y-2">
-          <p>
-            Each category has its own customized survey template with industry-specific
-            fields and requirements.
-          </p>
-          <p>
-            The templates are designed to capture essential information for deployment,
-            compliance, and technical assessment.
-          </p>
-          <p>
-            All reports are saved to your database and can be edited, downloaded as PDF,
-            or shared with stakeholders.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
