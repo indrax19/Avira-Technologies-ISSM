@@ -57,6 +57,12 @@ export interface TextileSurveyReport {
   id?: string;
   category: "textile";
 
+  // Display fields for list view
+  clientFacility?: string;
+  focalPerson?: string;
+  contactNumber?: string;
+  reportDate?: string;
+
   // 1. Mill/Facility Identification
   millName: string;
   unitName: string;
@@ -216,14 +222,16 @@ export const textileSurveyReportAPI = {
   async getAll() {
     try {
       const q = query(
-        collection(db, "textile_survey_reports"),
+        collection(db, "site_survey_reports"),
         orderBy("created_at", "desc")
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as TextileSurveyReport[];
+      return snapshot.docs
+        .filter((doc) => doc.data().category === "textile")
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as TextileSurveyReport[];
     } catch (error: any) {
       if (handleFirestoreError(error)) {
         return [];
@@ -234,9 +242,9 @@ export const textileSurveyReportAPI = {
 
   async getById(id: string) {
     try {
-      const docRef = doc(db, "textile_survey_reports", id);
+      const docRef = doc(db, "site_survey_reports", id);
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+      if (docSnap.exists() && docSnap.data().category === "textile") {
         return { id: docSnap.id, ...docSnap.data() } as TextileSurveyReport;
       }
       return null;
@@ -252,10 +260,14 @@ export const textileSurveyReportAPI = {
     try {
       const data = removeUndefined({
         ...report,
+        clientFacility: report.millName,
+        focalPerson: report.surveyedByName,
+        contactNumber: report.millContactNumber,
+        reportDate: report.surveyDate,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
-      const docRef = await addDoc(collection(db, "textile_survey_reports"), data);
+      const docRef = await addDoc(collection(db, "site_survey_reports"), data);
       return { id: docRef.id, ...data };
     } catch (error: any) {
       throw new Error(
@@ -268,11 +280,18 @@ export const textileSurveyReportAPI = {
 
   async update(id: string, report: Partial<TextileSurveyReport>) {
     try {
-      const data = removeUndefined({
+      const updateData: any = {
         ...report,
         updated_at: new Date().toISOString(),
-      });
-      const docRef = doc(db, "textile_survey_reports", id);
+      };
+
+      if (report.millName) updateData.clientFacility = report.millName;
+      if (report.surveyedByName) updateData.focalPerson = report.surveyedByName;
+      if (report.millContactNumber) updateData.contactNumber = report.millContactNumber;
+      if (report.surveyDate) updateData.reportDate = report.surveyDate;
+
+      const data = removeUndefined(updateData);
+      const docRef = doc(db, "site_survey_reports", id);
       await updateDoc(docRef, data);
     } catch (error: any) {
       throw new Error(
@@ -285,7 +304,7 @@ export const textileSurveyReportAPI = {
 
   async delete(id: string) {
     try {
-      await deleteDoc(doc(db, "textile_survey_reports", id));
+      await deleteDoc(doc(db, "site_survey_reports", id));
     } catch (error: any) {
       throw new Error(
         error.code === "permission-denied"
@@ -297,9 +316,9 @@ export const textileSurveyReportAPI = {
 
   subscribeById(id: string, callback: (report: TextileSurveyReport | null) => void): Unsubscribe {
     try {
-      const docRef = doc(db, "textile_survey_reports", id);
+      const docRef = doc(db, "site_survey_reports", id);
       return onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
+        if (docSnap.exists() && docSnap.data().category === "textile") {
           callback({ id: docSnap.id, ...docSnap.data() } as TextileSurveyReport);
         } else {
           callback(null);

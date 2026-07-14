@@ -245,23 +245,31 @@ export default function SiteSurveyReports() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((report) => (
+                  {filtered.map((report: any) => (
                     <TableRow key={report.id}>
-                      <TableCell className="font-medium">{report.clientFacility}</TableCell>
-                      <TableCell>{report.focalPerson}</TableCell>
-                      <TableCell>{report.contactNumber}</TableCell>
+                      <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
+                      <TableCell>{report.focalPerson || report.surveyedByName || "—"}</TableCell>
+                      <TableCell>{report.contactNumber || report.millContactNumber || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{report.surveyType}</Badge>
+                        <Badge variant="outline" className="capitalize">
+                          {report.category === "textile" ? "Textile" : (report.surveyType || "General")}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(report.reportDate), "dd MMM yyyy")}
+                        {format(new Date(report.reportDate || report.surveyDate), "dd MMM yyyy")}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => navigate(`/survey-reports/${report.id}`)}
+                            onClick={() => {
+                              if (report.category === "textile") {
+                                navigate(`/survey-reports/edit/textile/${report.id}`);
+                              } else {
+                                navigate(`/survey-reports/${report.id}`);
+                              }
+                            }}
                             title="Edit"
                           >
                             <Edit className="h-4 w-4" />
