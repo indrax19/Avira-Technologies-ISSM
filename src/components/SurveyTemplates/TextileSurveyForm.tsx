@@ -386,7 +386,7 @@ export default function TextileSurveyForm({
                 }
               />
               <label className="text-sm cursor-pointer">
-                ☐ Internet connectivity is available at the mill / site
+                Internet connectivity is available at the mill / site
               </label>
             </div>
 
