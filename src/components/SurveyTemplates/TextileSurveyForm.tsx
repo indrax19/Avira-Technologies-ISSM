@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   TextileSurveyData,
   BlowRoomEntry,
@@ -57,6 +57,10 @@ export default function TextileSurveyForm({
   isLoading = false,
 }: TextileSurveyFormProps) {
   const [data, setData] = useState<TextileSurveyData>(initialData);
+
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   const handleInputChange = (field: keyof TextileSurveyData, value: any) => {
     setData({ ...data, [field]: value });
