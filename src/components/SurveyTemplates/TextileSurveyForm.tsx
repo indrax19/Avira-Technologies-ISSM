@@ -435,7 +435,7 @@ export default function TextileSurveyForm({
                 }
               />
               <label className="text-sm cursor-pointer">
-                ☐ Existing network Uplink / LAN connection is available near proposed camera locations
+                Existing network Uplink / LAN connection is available near proposed camera locations
               </label>
             </div>
           </div>
