@@ -364,7 +364,7 @@ export default function SiteSurveyReports() {
                 <TableBody>
                   {filtered.map((report: any, index: number) => (
                     <TableRow key={report.id}>
-                      <TableCell className="font-medium text-center text-slate-600">{index + 1}</TableCell>
+                      <TableCell className="font-medium text-center text-slate-600">{filtered.length - index}</TableCell>
                       <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
                       <TableCell>{report.focalPerson || report.surveyedByName || "—"}</TableCell>
                       <TableCell>{report.contactNumber || report.millContactNumber || "—"}</TableCell>

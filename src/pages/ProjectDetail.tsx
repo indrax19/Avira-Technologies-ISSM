@@ -622,7 +622,7 @@ export default function ProjectDetail() {
                         key={site.id}
                         className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${isRecent ? "bg-blue-50" : ""}`}
                       >
-                        <TableCell className="font-medium text-center text-gray-600 py-4">{index + 1}</TableCell>
+                        <TableCell className="font-medium text-center text-gray-600 py-4">{filteredSites.length - index}</TableCell>
                         <TableCell className="font-semibold text-gray-900 py-4">
                           <div className="flex items-center gap-2">
                             {site.millName || "—"}
