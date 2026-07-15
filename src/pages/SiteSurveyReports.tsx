@@ -17,7 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Eye, Edit, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Eye, Edit, Download, Trash2, Copy } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -294,6 +295,33 @@ export default function SiteSurveyReports() {
     }
   };
 
+  const duplicateReportMutation = useMutation({
+    mutationFn: async (report: any) => {
+      const newReportData = { ...report };
+      delete newReportData.id;
+      delete newReportData.created_at;
+      delete newReportData.updated_at;
+
+      if (report.category === "textile") {
+        return textileSurveyReportAPI.create(newReportData);
+      } else {
+        return siteSurveyReportAPI.create(newReportData);
+      }
+    },
+    onSuccess: async () => {
+      await refetch();
+      toast.success("Survey report duplicated successfully");
+    },
+    onError: (error: any) => {
+      console.error("Duplicate error:", error);
+      toast.error(error?.message || "Failed to duplicate report");
+    },
+  });
+
+  const handleDuplicateReport = (report: any) => {
+    duplicateReportMutation.mutate(report);
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -348,22 +376,28 @@ export default function SiteSurveyReports() {
                 : "No reports match your search"}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="w-full overflow-x-auto -mx-6 px-6">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Sr.</TableHead>
                     <TableHead>Client / Facility</TableHead>
+                    <TableHead>Unit Name / No.</TableHead>
+                    <TableHead>Full Address / City</TableHead>
                     <TableHead>Focal Person</TableHead>
                     <TableHead>Contact Number</TableHead>
                     <TableHead>Survey Type</TableHead>
                     <TableHead>Report Date</TableHead>
-                    <TableHead className="w-32">Actions</TableHead>
+                    <TableHead className="w-40">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((report: any) => (
+                  {filtered.map((report: any, index: number) => (
                     <TableRow key={report.id}>
+                      <TableCell className="font-medium text-center text-slate-600">{filtered.length - index}</TableCell>
                       <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{report.unitName || report.unitNo || "—"}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{report.fullAddress || report.address || "—"}</TableCell>
                       <TableCell>{report.focalPerson || report.surveyedByName || "—"}</TableCell>
                       <TableCell>{report.contactNumber || report.millContactNumber || "—"}</TableCell>
                       <TableCell>
@@ -371,11 +405,11 @@ export default function SiteSurveyReports() {
                           {report.category === "textile" ? "Textile" : (report.surveyType || "General")}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {format(new Date(report.reportDate || report.surveyDate), "dd MMM yyyy")}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 flex-wrap">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -387,6 +421,7 @@ export default function SiteSurveyReports() {
                               }
                             }}
                             title="Edit"
+                            className="h-8 w-8 p-0"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -395,15 +430,26 @@ export default function SiteSurveyReports() {
                             variant="ghost"
                             onClick={() => downloadPDF(report.id!)}
                             title="Download PDF"
+                            className="h-8 w-8 p-0"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => handleDuplicateReport(report)}
+                            title="Duplicate"
+                            disabled={duplicateReportMutation.isPending}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => deleteReport(report)}
                             title="Delete report"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

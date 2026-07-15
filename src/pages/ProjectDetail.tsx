@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, MapPin, Pencil, Trash2, Eye, Download, Wifi, Zap, FileUp, CheckCircle, Clock, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, MapPin, Pencil, Trash2, Eye, Download, Wifi, Zap, FileUp, CheckCircle, Clock, FileText, Loader2, Copy } from "lucide-react";
 import { RealtimeStatusIndicator, DataLoadingSkeleton, ConnectionBadge } from "@/components/RealtimeStatusIndicator";
 import { format, differenceInHours } from "date-fns";
 import { exportProjectTrackingToExcel } from "@/lib/excelExport";
@@ -249,6 +249,37 @@ export default function ProjectDetail() {
     if (confirm("Are you sure you want to delete this site?")) {
       deleteSiteMutation.mutate(siteId);
     }
+  };
+
+  const duplicateSiteMutation = useMutation({
+    mutationFn: async (siteId: string) => {
+      const siteToClone = sites.find(s => s.id === siteId);
+      if (!siteToClone) throw new Error("Site not found");
+
+      const newSiteData = { ...siteToClone };
+      delete newSiteData.id;
+      delete newSiteData.created_at;
+      delete newSiteData.updated_at;
+      delete newSiteData.created_by;
+
+      return projectTrackingAPI.create({ ...newSiteData, projectId: id });
+    },
+    onSuccess: () => {
+      toast.success("Site duplicated successfully");
+    },
+    onError: (error: any) => {
+      console.error("Duplicate error:", error);
+      const errorMessage = error?.message || "Failed to duplicate site";
+      toast.error(errorMessage);
+    },
+  });
+
+  const handleDuplicateSite = (siteId: string) => {
+    if (!isUserAssigned) {
+      toast.error("Permission Denied: You don't have access to edit this project");
+      return;
+    }
+    duplicateSiteMutation.mutate(siteId);
   };
 
   const createCertificateMutation = useMutation({
@@ -600,7 +631,8 @@ export default function ProjectDetail() {
             <Table>
               <TableHeader className="bg-gray-50 border-b-2 border-gray-200">
                 <TableRow className="hover:bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700 h-12">Mill Name</TableHead>
+                  <TableHead className="font-semibold text-gray-700 h-12 w-12">Sr.</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Mill Name</TableHead>
                   <TableHead className="font-semibold text-gray-700">City</TableHead>
                   <TableHead className="font-semibold text-gray-700">Address</TableHead>
                   <TableHead className="font-semibold text-gray-700">Unit #</TableHead>
@@ -612,7 +644,7 @@ export default function ProjectDetail() {
               </TableHeader>
               <TableBody>
                 {filteredSites.length > 0 ? (
-                  filteredSites.map((site) => {
+                  filteredSites.map((site, index) => {
                     const updateStatus = getUpdateStatus(site, viewedSiteIds, appUser?.id);
                     const isRecent = isRecentlyModified(site, viewedSiteIds, appUser?.id);
 
@@ -621,6 +653,7 @@ export default function ProjectDetail() {
                         key={site.id}
                         className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${isRecent ? "bg-blue-50" : ""}`}
                       >
+                        <TableCell className="font-medium text-center text-gray-600 py-4">{filteredSites.length - index}</TableCell>
                         <TableCell className="font-semibold text-gray-900 py-4">
                           <div className="flex items-center gap-2">
                             {site.millName || "—"}
@@ -698,6 +731,16 @@ export default function ProjectDetail() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
+                                    className="text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                    onClick={() => handleDuplicateSite(site.id!)}
+                                    title="Duplicate"
+                                    disabled={duplicateSiteMutation.isPending}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
                                     className="text-red-600 hover:bg-red-100 hover:text-red-700"
                                     onClick={() => handleDeleteSite(site.id!)}
                                     title="Delete"
@@ -726,7 +769,7 @@ export default function ProjectDetail() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       No sites match your filters
                     </TableCell>
                   </TableRow>
