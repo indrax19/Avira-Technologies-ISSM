@@ -382,9 +382,10 @@ export default function SiteSurveyReports() {
                   <TableRow>
                     <TableHead className="w-12">Sr.</TableHead>
                     <TableHead>Client / Facility</TableHead>
+                    <TableHead>Unit Name / No.</TableHead>
+                    <TableHead>Full Address / City</TableHead>
                     <TableHead>Focal Person</TableHead>
                     <TableHead>Contact Number</TableHead>
-                    <TableHead>Location</TableHead>
                     <TableHead>Survey Type</TableHead>
                     <TableHead>Report Date</TableHead>
                     <TableHead className="w-40">Actions</TableHead>
@@ -395,9 +396,10 @@ export default function SiteSurveyReports() {
                     <TableRow key={report.id}>
                       <TableCell className="font-medium text-center text-slate-600">{filtered.length - index}</TableCell>
                       <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{report.unitName || report.unitNo || "—"}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{report.fullAddress || report.address || "—"}</TableCell>
                       <TableCell>{report.focalPerson || report.surveyedByName || "—"}</TableCell>
                       <TableCell>{report.contactNumber || report.millContactNumber || "—"}</TableCell>
-                      <TableCell className="text-sm text-slate-600">{report.projectScope || report.location || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
                           {report.category === "textile" ? "Textile" : (report.surveyType || "General")}
