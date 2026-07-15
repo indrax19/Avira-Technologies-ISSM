@@ -600,7 +600,8 @@ export default function ProjectDetail() {
             <Table>
               <TableHeader className="bg-gray-50 border-b-2 border-gray-200">
                 <TableRow className="hover:bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700 h-12">Mill Name</TableHead>
+                  <TableHead className="font-semibold text-gray-700 h-12 w-12">Sr.</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Mill Name</TableHead>
                   <TableHead className="font-semibold text-gray-700">City</TableHead>
                   <TableHead className="font-semibold text-gray-700">Address</TableHead>
                   <TableHead className="font-semibold text-gray-700">Unit #</TableHead>
@@ -612,7 +613,7 @@ export default function ProjectDetail() {
               </TableHeader>
               <TableBody>
                 {filteredSites.length > 0 ? (
-                  filteredSites.map((site) => {
+                  filteredSites.map((site, index) => {
                     const updateStatus = getUpdateStatus(site, viewedSiteIds, appUser?.id);
                     const isRecent = isRecentlyModified(site, viewedSiteIds, appUser?.id);
 
@@ -621,6 +622,7 @@ export default function ProjectDetail() {
                         key={site.id}
                         className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${isRecent ? "bg-blue-50" : ""}`}
                       >
+                        <TableCell className="font-medium text-center text-gray-600 py-4">{index + 1}</TableCell>
                         <TableCell className="font-semibold text-gray-900 py-4">
                           <div className="flex items-center gap-2">
                             {site.millName || "—"}
@@ -726,7 +728,7 @@ export default function ProjectDetail() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       No sites match your filters
                     </TableCell>
                   </TableRow>
