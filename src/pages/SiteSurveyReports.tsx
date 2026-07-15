@@ -352,6 +352,7 @@ export default function SiteSurveyReports() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Sr.</TableHead>
                     <TableHead>Client / Facility</TableHead>
                     <TableHead>Focal Person</TableHead>
                     <TableHead>Contact Number</TableHead>
@@ -361,8 +362,9 @@ export default function SiteSurveyReports() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((report: any) => (
+                  {filtered.map((report: any, index: number) => (
                     <TableRow key={report.id}>
+                      <TableCell className="font-medium text-center text-slate-600">{index + 1}</TableCell>
                       <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
                       <TableCell>{report.focalPerson || report.surveyedByName || "—"}</TableCell>
                       <TableCell>{report.contactNumber || report.millContactNumber || "—"}</TableCell>
