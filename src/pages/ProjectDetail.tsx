@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, MapPin, Pencil, Trash2, Eye, Download, Wifi, Zap, FileUp, CheckCircle, Clock, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, MapPin, Pencil, Trash2, Eye, Download, Wifi, Zap, FileUp, CheckCircle, Clock, FileText, Loader2, Copy } from "lucide-react";
 import { RealtimeStatusIndicator, DataLoadingSkeleton, ConnectionBadge } from "@/components/RealtimeStatusIndicator";
 import { format, differenceInHours } from "date-fns";
 import { exportProjectTrackingToExcel } from "@/lib/excelExport";
@@ -249,6 +249,37 @@ export default function ProjectDetail() {
     if (confirm("Are you sure you want to delete this site?")) {
       deleteSiteMutation.mutate(siteId);
     }
+  };
+
+  const duplicateSiteMutation = useMutation({
+    mutationFn: async (siteId: string) => {
+      const siteToClone = sites.find(s => s.id === siteId);
+      if (!siteToClone) throw new Error("Site not found");
+
+      const newSiteData = { ...siteToClone };
+      delete newSiteData.id;
+      delete newSiteData.created_at;
+      delete newSiteData.updated_at;
+      delete newSiteData.created_by;
+
+      return projectTrackingAPI.create({ ...newSiteData, projectId: id });
+    },
+    onSuccess: () => {
+      toast.success("Site duplicated successfully");
+    },
+    onError: (error: any) => {
+      console.error("Duplicate error:", error);
+      const errorMessage = error?.message || "Failed to duplicate site";
+      toast.error(errorMessage);
+    },
+  });
+
+  const handleDuplicateSite = (siteId: string) => {
+    if (!isUserAssigned) {
+      toast.error("Permission Denied: You don't have access to edit this project");
+      return;
+    }
+    duplicateSiteMutation.mutate(siteId);
   };
 
   const createCertificateMutation = useMutation({
@@ -696,6 +727,16 @@ export default function ProjectDetail() {
                                     title="Edit"
                                   >
                                     <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                    onClick={() => handleDuplicateSite(site.id!)}
+                                    title="Duplicate"
+                                    disabled={duplicateSiteMutation.isPending}
+                                  >
+                                    <Copy className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
