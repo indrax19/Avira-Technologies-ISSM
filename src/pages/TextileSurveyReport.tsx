@@ -13,6 +13,8 @@ import TextileSurveyForm from "@/components/SurveyTemplates/TextileSurveyForm";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { generateTextileSurveyPDF } from "@/lib/surveyPDFGenerator";
+import { companyProfileAPI } from "@/integrations/firebase/firestore";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
@@ -92,6 +94,32 @@ export default function TextileSurveyReportPage() {
   });
 
   const generatePDF = async () => {
+    if (!existingReport) {
+      toast.error("Please save the report first before exporting PDF");
+      return;
+    }
+
+    setGeneratingPDF(true);
+    try {
+      const profiles = await companyProfileAPI.getAll();
+      const issmProfile = profiles.find((profile) =>
+        profile.company_name.toLowerCase().includes("issm")
+      ) || profiles[0];
+
+      await generateTextileSurveyPDF({
+        ...existingReport,
+        companyProfileId: issmProfile?.id,
+      });
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+
+  const legacyGeneratePDF = async () => {
     if (!existingReport) {
       toast.error("Please save the report first before exporting PDF");
       return;
