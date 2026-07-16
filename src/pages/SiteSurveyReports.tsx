@@ -22,6 +22,7 @@ import { useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { generateSurveyReportPDF, generateTextileSurveyPDF } from "@/lib/surveyPDFGenerator";
+import { companyProfileAPI } from "@/integrations/firebase/firestore";
 
 export default function SiteSurveyReports() {
   const navigate = useNavigate();
@@ -50,7 +51,15 @@ export default function SiteSurveyReports() {
       if (!report) return;
 
       if (report.category === "textile") {
-        await generateTextileSurveyPDF(report);
+        const profiles = await companyProfileAPI.getAll();
+        const issmProfile = profiles.find((profile) =>
+          profile.company_name.toLowerCase().includes("issm")
+        ) || profiles[0];
+
+        await generateTextileSurveyPDF({
+          ...report,
+          companyProfileId: issmProfile?.id,
+        });
         toast.success("Textile survey PDF downloaded");
       } else {
         await generateSurveyReportPDF(report);
