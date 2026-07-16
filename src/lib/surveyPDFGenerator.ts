@@ -10,6 +10,7 @@ const MUTED = [82, 96, 117] as [number, number, number];
 const LIGHT = [245, 247, 250] as [number, number, number];
 
 export async function generateSurveyReportPDF(report: {
+  reportNumber?: string;
   clientFacility: string;
   focalPerson: string;
   contactNumber: string;
@@ -28,6 +29,9 @@ export async function generateSurveyReportPDF(report: {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(16);
   pdf.text("SITE SURVEY REPORT", pdf.internal.pageSize.getWidth() / 2, y, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.text(`Report No: ${value(report.reportNumber)}`, pdf.internal.pageSize.getWidth() - margin, y, { align: "right" });
   y += 12;
   const addTable = (title: string, head: string[], body: string[][]) => {
     autoTable(pdf, {
@@ -43,7 +47,7 @@ export async function generateSurveyReportPDF(report: {
     y = (pdf as any).lastAutoTable.finalY + 8;
   };
   addTable("SITE INFORMATION", ["Value"], [
-    ["Client / Facility", value(report.clientFacility)], ["Focal Person", value(report.focalPerson)], ["Contact Number", value(report.contactNumber)],
+  ["Client / Facility", value(report.clientFacility)], ["Focal Person", value(report.focalPerson)], ["Contact Number", value(report.contactNumber)],
     ["Project Scope", value(report.projectScope)], ["Survey Type", value(report.surveyType)], ["Report Date", format(new Date(report.reportDate), "dd MMM yyyy")], ["Prepared By", value(report.preparedBy)],
   ]);
   if (report.facilityOverview) addTable("FACILITY OVERVIEW", ["Details"], [["Overview", value(report.facilityOverview)]]);
@@ -54,6 +58,7 @@ export async function generateSurveyReportPDF(report: {
 
 type TextileReport = {
   id?: string;
+  reportNumber?: string;
   millName: string;
   unitName: string;
   fullAddress: string;
@@ -132,7 +137,11 @@ export async function generateTextileSurveyPDF(report: TextileReport) {
   };
 
   await drawHeader();
-  y = 44;
+  pdf.setTextColor(...INK);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9.5);
+  pdf.text(`Report No: ${value(report.reportNumber)}`, pageWidth - margin, 40, { align: "right" });
+  y = 48;
 
   const newPage = () => {
     pdf.addPage();
