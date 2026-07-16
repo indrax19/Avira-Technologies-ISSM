@@ -8,6 +8,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import { companyProfileAPI } from "@/integrations/firebase/firestore";
 export default function SiteSurveyReports() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
 
   const { data: reports, isLoading, refetch } = useQuery({
     queryKey: ["survey-reports"],
@@ -44,6 +46,27 @@ export default function SiteSurveyReports() {
       report.contactNumber.includes(search)
     );
   }, [reports, search]);
+
+  const toggleReportSelection = (reportId: string, checked: boolean) => {
+    setSelectedReportIds((current) => {
+      const next = new Set(current);
+      if (checked) next.add(reportId);
+      else next.delete(reportId);
+      return next;
+    });
+  };
+
+  const toggleAllVisibleReports = (checked: boolean) => {
+    setSelectedReportIds((current) => {
+      const next = new Set(current);
+      filtered.forEach((report) => {
+        if (!report.id) return;
+        if (checked) next.add(report.id);
+        else next.delete(report.id);
+      });
+      return next;
+    });
+  };
 
   const downloadPDF = async (reportId: string) => {
     try {
@@ -68,6 +91,33 @@ export default function SiteSurveyReports() {
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast.error("Failed to download PDF");
+    }
+  };
+
+  const downloadSelectedPDFs = async () => {
+    const selectedReports = filtered.filter((report) => report.id && selectedReportIds.has(report.id));
+    if (!selectedReports.length) return;
+
+    try {
+      const profiles = selectedReports.some((report) => report.category === "textile")
+        ? await companyProfileAPI.getAll()
+        : [];
+      const issmProfile = profiles.find((profile) =>
+        profile.company_name.toLowerCase().includes("issm")
+      ) || profiles[0];
+
+      for (const report of selectedReports) {
+        if (report.category === "textile") {
+          await generateTextileSurveyPDF({ ...report, companyProfileId: issmProfile?.id });
+        } else {
+          await generateSurveyReportPDF(report);
+        }
+      }
+      toast.success(`${selectedReports.length} separate PDF${selectedReports.length === 1 ? "" : "s"} downloaded`);
+      setSelectedReportIds(new Set());
+    } catch (error) {
+      console.error("Error downloading selected PDFs:", error);
+      toast.error("Failed to download selected PDFs");
     }
   };
 
@@ -156,8 +206,17 @@ export default function SiteSurveyReports() {
 
       {/* Reports Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>All Reports</CardTitle>
+          <Button
+            onClick={downloadSelectedPDFs}
+            disabled={selectedReportIds.size === 0}
+            variant="outline"
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download Selected ({selectedReportIds.size})
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -173,6 +232,13 @@ export default function SiteSurveyReports() {
               <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={filtered.length > 0 && filtered.every((report) => report.id && selectedReportIds.has(report.id))}
+                        onCheckedChange={(checked) => toggleAllVisibleReports(checked === true)}
+                        aria-label="Select all visible reports"
+                      />
+                    </TableHead>
                     <TableHead className="w-12">Sr.</TableHead>
                     <TableHead>Client / Facility</TableHead>
                     <TableHead>Unit Name / No.</TableHead>
@@ -187,6 +253,13 @@ export default function SiteSurveyReports() {
                 <TableBody>
                   {filtered.map((report: any, index: number) => (
                     <TableRow key={report.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={Boolean(report.id && selectedReportIds.has(report.id))}
+                          onCheckedChange={(checked) => report.id && toggleReportSelection(report.id, checked === true)}
+                          aria-label={`Select ${report.clientFacility || report.millName || "report"}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium text-center text-slate-600">{filtered.length - index}</TableCell>
                       <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
                       <TableCell className="text-sm text-slate-600">{report.unitName || report.unitNo || "—"}</TableCell>
