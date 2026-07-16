@@ -410,6 +410,9 @@ export default function TextileSurveyReportPage() {
             <p className="text-blue-100 text-xs sm:text-sm mt-1">
               {existingReport ? "Update textile mill survey details" : "Create new textile mill survey report"}
             </p>
+            {existingReport?.reportNumber && (
+              <p className="text-white font-semibold text-sm mt-2">Report No: {existingReport.reportNumber}</p>
+            )}
           </div>
         </div>
         {existingReport && (

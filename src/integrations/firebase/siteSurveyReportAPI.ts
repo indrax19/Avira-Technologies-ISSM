@@ -31,6 +31,7 @@ export interface NetworkCablingItem {
 
 export interface SiteSurveyReport {
   id?: string;
+  reportNumber?: string;
   clientFacility: string;
   focalPerson: string;
   contactNumber: string;
@@ -55,6 +56,7 @@ export interface BlowRoomEntry {
 
 export interface TextileSurveyReport {
   id?: string;
+  reportNumber?: string;
   category: "textile";
 
   // Display fields for list view
@@ -118,6 +120,16 @@ export interface TextileSurveyReport {
   updated_at?: string;
 }
 
+const getNextReportNumber = async () => {
+  const snapshot = await getDocs(collection(db, "site_survey_reports"));
+  const highestNumber = snapshot.docs.reduce((highest, reportDoc) => {
+    const match = /^SVR-(\d+)$/.exec(reportDoc.data().reportNumber || "");
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+
+  return `SVR-${String(highestNumber + 1).padStart(4, "0")}`;
+};
+
 export const siteSurveyReportAPI = {
   async getAll() {
     try {
@@ -158,6 +170,7 @@ export const siteSurveyReportAPI = {
     try {
       const data = removeUndefined({
         ...report,
+        reportNumber: await getNextReportNumber(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -260,6 +273,7 @@ export const textileSurveyReportAPI = {
     try {
       const data = removeUndefined({
         ...report,
+        reportNumber: await getNextReportNumber(),
         clientFacility: report.millName,
         focalPerson: report.surveyedByName,
         contactNumber: report.millContactNumber,

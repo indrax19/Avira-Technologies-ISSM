@@ -240,6 +240,7 @@ export default function SiteSurveyReports() {
                       />
                     </TableHead>
                     <TableHead className="w-12">Sr.</TableHead>
+                    <TableHead>Report No.</TableHead>
                     <TableHead>Client / Facility</TableHead>
                     <TableHead>Unit Name / No.</TableHead>
                     <TableHead>Full Address / City</TableHead>
@@ -261,6 +262,7 @@ export default function SiteSurveyReports() {
                         />
                       </TableCell>
                       <TableCell className="font-medium text-center text-slate-600">{filtered.length - index}</TableCell>
+                      <TableCell className="font-medium text-blue-700">{report.reportNumber || "—"}</TableCell>
                       <TableCell className="font-medium">{report.clientFacility || report.millName}</TableCell>
                       <TableCell className="text-sm text-slate-600">{report.unitName || report.unitNo || "—"}</TableCell>
                       <TableCell className="text-sm text-slate-600">{report.fullAddress || report.address || "—"}</TableCell>
