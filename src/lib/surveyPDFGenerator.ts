@@ -47,7 +47,7 @@ export async function generateSurveyReportPDF(report: {
     y = (pdf as any).lastAutoTable.finalY + 8;
   };
   addTable("SITE INFORMATION", ["Value"], [
-    ["Report Number", value(report.reportNumber)], ["Client / Facility", value(report.clientFacility)], ["Focal Person", value(report.focalPerson)], ["Contact Number", value(report.contactNumber)],
+  ["Client / Facility", value(report.clientFacility)], ["Focal Person", value(report.focalPerson)], ["Contact Number", value(report.contactNumber)],
     ["Project Scope", value(report.projectScope)], ["Survey Type", value(report.surveyType)], ["Report Date", format(new Date(report.reportDate), "dd MMM yyyy")], ["Prepared By", value(report.preparedBy)],
   ]);
   if (report.facilityOverview) addTable("FACILITY OVERVIEW", ["Details"], [["Overview", value(report.facilityOverview)]]);
@@ -200,7 +200,7 @@ export async function generateTextileSurveyPDF(report: TextileReport) {
 
   section("1. MILL / FACILITY IDENTIFICATION");
   rows([
-    ["Report Number", report.reportNumber], ["Mill Name", report.millName], ["Unit Name / Unit No.", report.unitName], ["Full Address / City", report.fullAddress],
+    ["Mill Name", report.millName], ["Unit Name / Unit No.", report.unitName], ["Full Address / City", report.fullAddress],
     ["Total No. of Units", report.totalUnits], ["Survey Date", report.surveyDate ? format(new Date(report.surveyDate), "dd MMM yyyy") : "—"],
     ["Surveyed By (Name)", report.surveyedByName], ["Designation", report.surveyedByDesignation], ["Mill Contact Person", report.millContactPerson], ["Contact No. / Email", report.millContactNumber],
   ]);
