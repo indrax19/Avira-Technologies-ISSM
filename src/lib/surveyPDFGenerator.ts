@@ -141,7 +141,7 @@ export async function generateTextileSurveyPDF(report: TextileReport) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9.5);
   pdf.text(`Report No: ${value(report.reportNumber)}`, pageWidth - margin, 40, { align: "right" });
-  y = 46;
+  y = 48;
 
   const newPage = () => {
     pdf.addPage();
