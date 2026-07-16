@@ -29,6 +29,9 @@ export async function generateSurveyReportPDF(report: {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(16);
   pdf.text("SITE SURVEY REPORT", pdf.internal.pageSize.getWidth() / 2, y, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.text(`Report No: ${value(report.reportNumber)}`, pdf.internal.pageSize.getWidth() - margin, y, { align: "right" });
   y += 12;
   const addTable = (title: string, head: string[], body: string[][]) => {
     autoTable(pdf, {
@@ -134,6 +137,10 @@ export async function generateTextileSurveyPDF(report: TextileReport) {
   };
 
   await drawHeader();
+  pdf.setTextColor(...INK);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9.5);
+  pdf.text(`Report No: ${value(report.reportNumber)}`, pageWidth - margin, 40, { align: "right" });
   y = 44;
 
   const newPage = () => {

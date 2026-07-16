@@ -120,14 +120,41 @@ export interface TextileSurveyReport {
   updated_at?: string;
 }
 
-const getNextReportNumber = async () => {
-  const snapshot = await getDocs(collection(db, "site_survey_reports"));
+const formatReportNumber = (number: number) => `SVR-${String(number).padStart(4, "0")}`;
+
+const addMissingReportNumbers = async (snapshot: Awaited<ReturnType<typeof getDocs>>) => {
   const highestNumber = snapshot.docs.reduce((highest, reportDoc) => {
     const match = /^SVR-(\d+)$/.exec(reportDoc.data().reportNumber || "");
     return match ? Math.max(highest, Number(match[1])) : highest;
   }, 0);
+  let nextNumber = highestNumber + 1;
+  const assignedNumbers = new Map<string, string>();
+  const missingReports = snapshot.docs
+    .filter((reportDoc) => !reportDoc.data().reportNumber)
+    .sort((a, b) => (a.data().created_at || "").localeCompare(b.data().created_at || ""));
 
-  return `SVR-${String(highestNumber + 1).padStart(4, "0")}`;
+  await Promise.all(missingReports.map(async (reportDoc) => {
+    const reportNumber = formatReportNumber(nextNumber++);
+    await updateDoc(reportDoc.ref, { reportNumber });
+    assignedNumbers.set(reportDoc.id, reportNumber);
+  }));
+
+  return snapshot.docs.map((reportDoc) => ({
+    id: reportDoc.id,
+    ...reportDoc.data(),
+    reportNumber: reportDoc.data().reportNumber || assignedNumbers.get(reportDoc.id),
+  }));
+};
+
+const getNextReportNumber = async () => {
+  const snapshot = await getDocs(collection(db, "site_survey_reports"));
+  const numberedReports = await addMissingReportNumbers(snapshot);
+  const highestNumber = numberedReports.reduce((highest, report) => {
+    const match = /^SVR-(\d+)$/.exec(report.reportNumber || "");
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+
+  return formatReportNumber(highestNumber + 1);
 };
 
 export const siteSurveyReportAPI = {
@@ -138,10 +165,8 @@ export const siteSurveyReportAPI = {
         orderBy("created_at", "desc")
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as SiteSurveyReport[];
+      const reports = await addMissingReportNumbers(snapshot);
+      return reports as SiteSurveyReport[];
     } catch (error: any) {
       if (handleFirestoreError(error)) {
         return [];
@@ -239,12 +264,8 @@ export const textileSurveyReportAPI = {
         orderBy("created_at", "desc")
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs
-        .filter((doc) => doc.data().category === "textile")
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as TextileSurveyReport[];
+      const reports = await addMissingReportNumbers(snapshot);
+      return reports.filter((report) => report.category === "textile") as TextileSurveyReport[];
     } catch (error: any) {
       if (handleFirestoreError(error)) {
         return [];
