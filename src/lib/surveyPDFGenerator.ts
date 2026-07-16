@@ -4,13 +4,12 @@ import { format } from "date-fns";
 import { companyProfileAPI, CompanyProfile } from "@/integrations/firebase/firestore";
 import { addLogoToPDF } from "./pdfLogoHelper";
 
-const NAVY = [39, 60, 112] as [number, number, number];
-const SLATE = [71, 85, 105] as [number, number, number];
-const LIGHT_BG = [245, 247, 250] as [number, number, number];
-const ALT_ROW_BG = [248, 250, 252] as [number, number, number];
+const NAVY = [31, 54, 96] as [number, number, number];
+const INK = [25, 35, 52] as [number, number, number];
+const MUTED = [82, 96, 117] as [number, number, number];
+const LIGHT = [245, 247, 250] as [number, number, number];
 
-interface SurveyReportData {
-  id: string;
+export async function generateSurveyReportPDF(report: {
   clientFacility: string;
   focalPerson: string;
   contactNumber: string;
@@ -19,490 +18,227 @@ interface SurveyReportData {
   reportDate: string | Date;
   preparedBy: string;
   facilityOverview?: string;
-  gateWiseSummary?: Array<{
-    gateName: string;
-    function: string;
-    cameraRequired: string;
-    notes: string;
-  }>;
-  networkCablingRequirements?: Array<{
-    item: string;
-    quantity: string;
-    purpose: string;
-  }>;
-  companyProfileId?: string;
+  gateWiseSummary?: Array<{ gateName: string; function: string; cameraRequired: string; notes: string }>;
+  networkCablingRequirements?: Array<{ item: string; quantity: string; purpose: string }>;
+}) {
+  const pdf = new jsPDF("p", "mm", "a4");
+  const margin = 14;
+  const width = pdf.internal.pageSize.getWidth() - margin * 2;
+  let y = 18;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("SITE SURVEY REPORT", pdf.internal.pageSize.getWidth() / 2, y, { align: "center" });
+  y += 12;
+  const addTable = (title: string, head: string[], body: string[][]) => {
+    autoTable(pdf, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      theme: "grid",
+      head: [[title, ...head]],
+      body,
+      headStyles: { fillColor: NAVY, textColor: 255, fontStyle: "bold", fontSize: 10 },
+      bodyStyles: { fontSize: 10, cellPadding: 3, textColor: INK, lineColor: [170, 180, 194], lineWidth: 0.25 },
+      alternateRowStyles: { fillColor: LIGHT },
+    });
+    y = (pdf as any).lastAutoTable.finalY + 8;
+  };
+  addTable("SITE INFORMATION", ["Value"], [
+    ["Client / Facility", value(report.clientFacility)], ["Focal Person", value(report.focalPerson)], ["Contact Number", value(report.contactNumber)],
+    ["Project Scope", value(report.projectScope)], ["Survey Type", value(report.surveyType)], ["Report Date", format(new Date(report.reportDate), "dd MMM yyyy")], ["Prepared By", value(report.preparedBy)],
+  ]);
+  if (report.facilityOverview) addTable("FACILITY OVERVIEW", ["Details"], [["Overview", value(report.facilityOverview)]]);
+  if (report.gateWiseSummary?.length) addTable("GATE-WISE SURVEY SUMMARY", ["Function", "Camera Required", "Notes"], report.gateWiseSummary.map((item) => [value(item.gateName), value(item.function), value(item.cameraRequired), value(item.notes)]));
+  if (report.networkCablingRequirements?.length) addTable("NETWORK & CABLING REQUIREMENTS", ["Quantity", "Purpose"], report.networkCablingRequirements.map((item) => [value(item.item), value(item.quantity), value(item.purpose)]));
+  pdf.save(`Survey_Report_${report.clientFacility.replace(/\\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`);
 }
 
-export async function generateSurveyReportPDF(report: SurveyReportData) {
+type TextileReport = {
+  id?: string;
+  millName: string;
+  unitName: string;
+  fullAddress: string;
+  totalUnits: string;
+  surveyDate: string;
+  surveyedByName: string;
+  surveyedByDesignation: string;
+  millContactPerson: string;
+  millContactNumber: string;
+  blowRooms: Array<{ blowRoomNo: string; entryPoints: string; cameraLocation: string; lightingCondition: string }>;
+  totalBlowRooms: string;
+  totalEntryPoints: string;
+  wasteFlowOption: string;
+  wasteFlowRemarks: string;
+  internetAvailable: boolean;
+  connectionTypes: string[];
+  connectionTypesOther: string;
+  uplinkAvailable: boolean;
+  bandwidthOption: string;
+  internetQuality: string;
+  ispProviderName: string;
+  uplinkAtCamera: string;
+  distanceToNearestPoint: string;
+  upsAvailable: boolean;
+  cameraSocket: boolean;
+  converterSocket: boolean;
+  switchSocket: boolean;
+  upsCapacity: string;
+  upsBackupTime: string;
+  gpuCompute: string;
+  generalRemarks: string;
+  surveyorSignature: string;
+  surveyorSignatureDate: string;
+  customerRepresentativeSignature: string;
+  customerRepresentativeSignatureDate: string;
+  companyProfileId?: string;
+};
+
+const value = (input: unknown) => {
+  if (typeof input === "boolean") return input ? "Yes" : "No";
+  if (Array.isArray(input)) return input.length ? input.join(", ") : "—";
+  return String(input ?? "").trim() || "—";
+};
+
+export async function generateTextileSurveyPDF(report: TextileReport) {
   const pdf = new jsPDF("p", "mm", "a4");
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 14;
   const contentWidth = pageWidth - margin * 2;
-
-  let yPosition = 18;
+  let y = 18;
   let companyProfile: CompanyProfile | null = null;
 
-  // Fetch company profile if provided
   if (report.companyProfileId) {
-    try {
-      companyProfile = await companyProfileAPI.getById(report.companyProfileId);
-    } catch (error) {
-      console.error("Error fetching company profile:", error);
-    }
+    companyProfile = await companyProfileAPI.getById(report.companyProfileId);
   }
 
-  // Professional header with logo and company info
-  pdf.setFillColor(...NAVY);
-  pdf.rect(0, 0, pageWidth, 40, "F");
-
-  let logoHeight = 0;
-  if (companyProfile?.logo_url) {
-    try {
-      logoHeight = await addLogoToPDF(
-        pdf,
-        companyProfile.logo_url,
-        margin,
-        8,
-        { maxWidth: 25, maxHeight: 20 }
-      );
-    } catch (error) {
-      console.error("Error adding logo:", error);
+  const drawHeader = async () => {
+    pdf.setDrawColor(210, 216, 226);
+    pdf.line(margin, 35, pageWidth - margin, 35);
+    if (companyProfile?.logo_url) {
+      await addLogoToPDF(pdf, companyProfile.logo_url, margin, 7, { maxWidth: 30, maxHeight: 21 });
     }
-  }
-
-  // Title on the right
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(22);
-  pdf.text("SITE SURVEY REPORT", pageWidth / 2, 20, { align: "center" });
-
-  // Company info on right side
-  if (companyProfile) {
-    const rightX = pageWidth - margin - 2;
+    const infoX = pageWidth - margin;
+    pdf.setTextColor(...INK);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.text(companyProfile.company_name || "Company", rightX, 12, {
-      align: "right",
-    });
-
+    pdf.setFontSize(13);
+    pdf.text(companyProfile?.company_name || "ISSM", infoX, 11, { align: "right" });
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
+    pdf.setFontSize(9);
     let infoY = 16;
-
-    if (companyProfile.phone) {
-      pdf.text(`Ph: ${companyProfile.phone}`, rightX, infoY, { align: "right" });
-      infoY += 3;
+    for (const line of [companyProfile?.phone && `Phone: ${companyProfile.phone}`, companyProfile?.email && `Email: ${companyProfile.email}`, companyProfile?.website && `Web: ${companyProfile.website}`].filter(Boolean) as string[]) {
+      pdf.text(line, infoX, infoY, { align: "right" });
+      infoY += 4;
     }
-    if (companyProfile.email) {
-      pdf.text(`Email: ${companyProfile.email}`, rightX, infoY, {
-        align: "right",
-      });
-      infoY += 3;
-    }
-    if (companyProfile.website) {
-      pdf.text(`Web: ${companyProfile.website}`, rightX, infoY, {
-        align: "right",
-      });
-    }
-  } else {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.text("AVIRA TECHNOLOGIES", pageWidth - margin, 16, { align: "right" });
-  }
+  };
 
-  yPosition = 45;
+  await drawHeader();
+  y = 44;
 
-  // Report metadata bar
-  pdf.setFillColor(...LIGHT_BG);
-  pdf.rect(margin, yPosition, contentWidth, 14, "F");
-
-  pdf.setTextColor(...SLATE);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-  pdf.text("REPORT DATE", margin + 5, yPosition + 4);
-  pdf.text("PREPARED BY", margin + contentWidth / 2, yPosition + 4);
-
-  pdf.setTextColor(15, 23, 42);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.text(
-    format(new Date(report.reportDate), "dd MMM yyyy"),
-    margin + 5,
-    yPosition + 9
-  );
-  pdf.text(report.preparedBy || "—", margin + contentWidth / 2, yPosition + 9);
-
-  yPosition += 20;
-
-  const drawSectionHeader = (title: string) => {
+  const newPage = () => {
+    pdf.addPage();
+    y = 18;
+  };
+  const ensureSpace = (height: number) => {
+    if (y + height > pageHeight - 20) newPage();
+  };
+  const section = (title: string) => {
+    ensureSpace(15);
     pdf.setFillColor(...NAVY);
-    pdf.roundedRect(margin, yPosition, contentWidth, 7, 1, 1, "F");
+    pdf.rect(margin, y, contentWidth, 8, "F");
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.text(title, margin + 4, yPosition + 4.5);
-    pdf.setTextColor(15, 23, 42);
-    yPosition += 11;
+    pdf.setFontSize(11);
+    pdf.text(title, margin + 4, y + 5.3);
+    y += 8;
   };
-
-  const addSectionContent = (
-    rows: Array<[string, string]>
-  ) => {
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-
-    rows.forEach(([label, value], index) => {
-      // Alternate row background
-      if (index % 2 === 0) {
-        pdf.setFillColor(...ALT_ROW_BG);
-        pdf.rect(margin, yPosition - 4, contentWidth, 6.5, "F");
-      }
-
-      // Label
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(...SLATE);
-      pdf.text(label, margin + 4, yPosition);
-
-      // Value
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(15, 23, 42);
-      const maxValueWidth = contentWidth - 65;
-      const wrappedValue = pdf.splitTextToSize(value || "—", maxValueWidth);
-      pdf.text(wrappedValue, margin + 65, yPosition);
-
-      yPosition += Math.max(6.5, wrappedValue.length * 4);
+  const rows = (items: Array<[string, unknown]>) => {
+    autoTable(pdf, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      theme: "grid",
+      body: items.map(([label, item]) => [label, value(item)]),
+      columnStyles: { 0: { cellWidth: 58, fontStyle: "bold" }, 1: { cellWidth: contentWidth - 58 } },
+      bodyStyles: { font: "helvetica", fontSize: 10, textColor: INK, cellPadding: 3.2, lineColor: [170, 180, 194], lineWidth: 0.25 },
+      alternateRowStyles: { fillColor: LIGHT },
     });
-
-    yPosition += 5;
+    y = (pdf as any).lastAutoTable.finalY + 7;
+  };
+  const table = (head: string[], body: string[][], widths?: number[]) => {
+    ensureSpace(25);
+    autoTable(pdf, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      theme: "grid",
+      head: [head],
+      body,
+      columnStyles: widths?.reduce((acc, width, index) => ({ ...acc, [index]: { cellWidth: width } }), {} as Record<number, { cellWidth: number }>),
+      headStyles: { fillColor: NAVY, textColor: 255, fontStyle: "bold", fontSize: 9.5, cellPadding: 3.2, lineColor: [130, 145, 166], lineWidth: 0.3 },
+      bodyStyles: { fontSize: 9.5, textColor: INK, cellPadding: 3.2, lineColor: [170, 180, 194], lineWidth: 0.25 },
+      alternateRowStyles: { fillColor: LIGHT },
+    });
+    y = (pdf as any).lastAutoTable.finalY + 7;
   };
 
-  // Site Information Section
-  drawSectionHeader("SITE INFORMATION");
-  addSectionContent([
-    ["Client / Facility", report.clientFacility],
-    ["Focal Person", report.focalPerson],
-    ["Contact Number", report.contactNumber],
-    ["Project Scope", report.projectScope],
-    ["Survey Type", report.surveyType],
+  pdf.setTextColor(...INK);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(15);
+  pdf.text("PRE-INSTALLATION / PRE-DEPLOYMENT SURVEY FORM", pageWidth / 2, y, { align: "center" });
+  y += 7;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10.5);
+  pdf.text("Video Analytics System — Spinning Unit / Blow Room Deployment (Pakistan)", pageWidth / 2, y, { align: "center" });
+  y += 10;
+
+  section("1. MILL / FACILITY IDENTIFICATION");
+  rows([
+    ["Mill Name", report.millName], ["Unit Name / Unit No.", report.unitName], ["Full Address / City", report.fullAddress],
+    ["Total No. of Units", report.totalUnits], ["Survey Date", report.surveyDate ? format(new Date(report.surveyDate), "dd MMM yyyy") : "—"],
+    ["Surveyed By (Name)", report.surveyedByName], ["Designation", report.surveyedByDesignation], ["Mill Contact Person", report.millContactPerson], ["Contact No. / Email", report.millContactNumber],
   ]);
 
-  // Facility Overview Section
-  if (report.facilityOverview?.trim()) {
-    if (yPosition > pageHeight - 55) {
-      pdf.addPage();
-      yPosition = margin;
-    }
+  section("2. BLOW ROOM INVENTORY & CAMERA COVERAGE");
+  table(["Sr. #", "Blow Room No.", "Entry Points", "Camera Location(s)", "Lighting Condition"], report.blowRooms.map((room, index) => [String(index + 1), value(room.blowRoomNo), value(room.entryPoints), value(room.cameraLocation), value(room.lightingCondition)]), [14, 32, 28, 53, 55] as number[]);
+  rows([["Total No. of Blow Rooms", report.totalBlowRooms], ["Total Entry Points", report.totalEntryPoints]]);
 
-    drawSectionHeader("FACILITY OVERVIEW");
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(15, 23, 42);
-    const overview = pdf.splitTextToSize(report.facilityOverview, contentWidth - 8);
-    pdf.text(overview, margin + 4, yPosition);
-    yPosition += overview.length * 4.5 + 8;
+  section("3. WASTE FLOW & ENTRY-POINT CROSS-CONTAMINATION CHECK");
+  rows([["Waste Flow Option", report.wasteFlowOption], ["Remarks", report.wasteFlowRemarks]]);
+
+  section("4. NETWORK & INTERNET CONNECTIVITY");
+  rows([
+    ["Internet Available", report.internetAvailable], ["Connection Types", report.connectionTypes], ["Other Connection Type", report.connectionTypesOther],
+    ["Uplink Available", report.uplinkAvailable], ["Bandwidth Option", report.bandwidthOption], ["Internet Quality", report.internetQuality],
+    ["ISP / Provider", report.ispProviderName], ["Uplink at Camera", report.uplinkAtCamera], ["Distance to Nearest Point", report.distanceToNearestPoint],
+  ]);
+
+  section("5. POWER INFRASTRUCTURE");
+  rows([
+    ["UPS Backup Available", report.upsAvailable], ["Dedicated Camera Socket", report.cameraSocket], ["Converter Socket", report.converterSocket],
+    ["Switch Socket", report.switchSocket], ["UPS Capacity", report.upsCapacity], ["UPS Backup Time", report.upsBackupTime],
+  ]);
+
+  if (report.gpuCompute?.trim()) {
+    section("6. GPU / COMPUTE & EQUIPMENT SIZING");
+    rows([["GPU / Compute Requirements", report.gpuCompute]]);
+  }
+  if (report.generalRemarks?.trim()) {
+    section("7. GENERAL SITE REMARKS / ADDITIONAL OBSERVATIONS");
+    rows([["Remarks", report.generalRemarks]]);
   }
 
-  // Gate-Wise Summary Table
-  if (report.gateWiseSummary?.some((item) => item.gateName.trim())) {
-    if (yPosition > pageHeight - 65) {
-      pdf.addPage();
-      yPosition = margin;
-    }
+  ensureSpace(35);
+  section("SIGN-OFF");
+  table(["Surveyor Signature", "Date", "Customer Representative Signature", "Date"], [[value(report.surveyorSignature), value(report.surveyorSignatureDate), value(report.customerRepresentativeSignature), value(report.customerRepresentativeSignatureDate)]], [48, 28, 76, 28]);
 
-    drawSectionHeader("GATE-WISE SURVEY SUMMARY");
-    autoTable(pdf, {
-      startY: yPosition,
-      head: [["Gate Name", "Function", "Camera Required", "Notes"]],
-      body: report.gateWiseSummary
-        .filter((item) => item.gateName.trim())
-        .map((item) => [item.gateName, item.function, item.cameraRequired, item.notes]),
-      margin: { left: margin, right: margin },
-      theme: "grid",
-      headStyles: {
-        fillColor: NAVY,
-        textColor: 255,
-        fontStyle: "bold",
-        fontSize: 9,
-        cellPadding: 3,
-      },
-      bodyStyles: {
-        fontSize: 8.5,
-        cellPadding: 3,
-        textColor: [30, 41, 59],
-      },
-      alternateRowStyles: { fillColor: ALT_ROW_BG },
-      columnStyles: {
-        0: { cellWidth: 34 },
-        1: { cellWidth: 34 },
-        2: { cellWidth: 31 },
-        3: { cellWidth: 67 },
-      },
-    });
-    yPosition = (pdf as any).lastAutoTable.finalY + 10;
-  }
-
-  // Network & Cabling Requirements Table
-  if (report.networkCablingRequirements?.some((item) => item.item.trim())) {
-    if (yPosition > pageHeight - 65) {
-      pdf.addPage();
-      yPosition = margin;
-    }
-
-    drawSectionHeader("NETWORK & CABLING REQUIREMENTS");
-    autoTable(pdf, {
-      startY: yPosition,
-      head: [["Item", "Quantity", "Purpose"]],
-      body: report.networkCablingRequirements
-        .filter((item) => item.item.trim())
-        .map((item) => [item.item, item.quantity, item.purpose]),
-      margin: { left: margin, right: margin },
-      theme: "grid",
-      headStyles: {
-        fillColor: NAVY,
-        textColor: 255,
-        fontStyle: "bold",
-        fontSize: 9,
-        cellPadding: 3,
-      },
-      bodyStyles: {
-        fontSize: 8.5,
-        cellPadding: 3,
-        textColor: [30, 41, 59],
-      },
-      alternateRowStyles: { fillColor: ALT_ROW_BG },
-      columnStyles: {
-        0: { cellWidth: 52 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 79 },
-      },
-    });
-  }
-
-  // Add footer with page numbers and confidential mark
   const pageCount = (pdf as any).internal.pages.length - 1;
   for (let page = 1; page <= pageCount; page++) {
     pdf.setPage(page);
-
-    // Footer line
-    pdf.setDrawColor(226, 232, 240);
+    pdf.setDrawColor(210, 216, 226);
     pdf.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
-
-    // Footer text
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...SLATE);
-
-    const footerText = companyProfile
-      ? `${companyProfile.company_name} · Site Survey Report`
-      : "Avira Technologies · Site Survey Report";
-
-    pdf.text(footerText, margin, pageHeight - 8);
-    pdf.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 8, {
-      align: "right",
-    });
-
-    // Confidential mark
-    pdf.setFontSize(7);
-    pdf.setTextColor(150, 150, 150);
-    pdf.text("CONFIDENTIAL", pageWidth / 2, pageHeight - 8, { align: "center" });
-  }
-
-  // Generate filename
-  const fileName = `Survey_Report_${report.clientFacility.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`;
-  pdf.save(fileName);
-}
-
-// Helper for textile survey
-interface TextileSurveyData extends SurveyReportData {
-  millName?: string;
-  unitName?: string;
-  fullAddress?: string;
-  totalUnits?: string;
-  surveyDate?: string;
-  surveyedByName?: string;
-  millContactPerson?: string;
-  millContactNumber?: string;
-  wasteFlowOption?: string;
-  wasteFlowRemarks?: string;
-  internetAvailable?: string;
-  connectionTypes?: string;
-  internetQuality?: string;
-  ispProviderName?: string;
-  upsAvailable?: string;
-  upsCapacity?: string;
-  upsBackupTime?: string;
-  gpuCompute?: string;
-  generalRemarks?: string;
-  surveyorSignature?: string;
-  customerRepresentativeSignature?: string;
-  blowRooms?: Array<{
-    roomNumber?: string;
-    spinningFrames?: string;
-    spindles?: string;
-  }>;
-}
-
-export async function generateTextileSurveyPDF(report: TextileSurveyData) {
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 15;
-  const contentWidth = pageWidth - margin * 2;
-
-  let yPosition = 18;
-  let companyProfile: CompanyProfile | null = null;
-
-  // Fetch company profile if provided
-  if (report.companyProfileId) {
-    try {
-      companyProfile = await companyProfileAPI.getById(report.companyProfileId);
-    } catch (error) {
-      console.error("Error fetching company profile:", error);
-    }
-  }
-
-  // Professional header
-  pdf.setFillColor(...NAVY);
-  pdf.rect(0, 0, pageWidth, 40, "F");
-
-  let logoHeight = 0;
-  if (companyProfile?.logo_url) {
-    try {
-      logoHeight = await addLogoToPDF(
-        pdf,
-        companyProfile.logo_url,
-        margin,
-        8,
-        { maxWidth: 25, maxHeight: 20 }
-      );
-    } catch (error) {
-      console.error("Error adding logo:", error);
-    }
-  }
-
-  // Title
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(22);
-  pdf.text("TEXTILE MILL SURVEY REPORT", pageWidth / 2, 20, { align: "center" });
-
-  // Company info
-  if (companyProfile) {
-    const rightX = pageWidth - margin - 2;
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.text(companyProfile.company_name || "Company", rightX, 12, {
-      align: "right",
-    });
-
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
-    let infoY = 16;
-
-    if (companyProfile.phone) {
-      pdf.text(`Ph: ${companyProfile.phone}`, rightX, infoY, { align: "right" });
-      infoY += 3;
-    }
-    if (companyProfile.email) {
-      pdf.text(`Email: ${companyProfile.email}`, rightX, infoY, {
-        align: "right",
-      });
-      infoY += 3;
-    }
-  }
-
-  yPosition = 45;
-
-  const addSection = (title: string, rows: Array<[string, string]>) => {
-    if (yPosition > pageHeight - 45) {
-      pdf.addPage();
-      yPosition = margin;
-    }
-
-    pdf.setFillColor(...NAVY);
-    pdf.roundedRect(margin, yPosition, contentWidth, 7, 1, 1, "F");
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.text(title, margin + 4, yPosition + 4.5);
-    yPosition += 11;
-
+    pdf.setTextColor(...MUTED);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8.5);
-
-    rows.forEach(([label, value], index) => {
-      if (yPosition > pageHeight - 15) {
-        pdf.addPage();
-        yPosition = margin;
-      }
-
-      const wrappedValue = pdf.splitTextToSize(value || "—", contentWidth - 65);
-      pdf.setTextColor(...SLATE);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(label, margin + 4, yPosition);
-
-      pdf.setTextColor(15, 23, 42);
-      pdf.setFont("helvetica", "normal");
-      pdf.text(wrappedValue, margin + 65, yPosition);
-
-      yPosition += Math.max(5, wrappedValue.length * 4 + 1);
-    });
-
-    yPosition += 5;
-  };
-
-  // Sections
-  addSection("MILL / FACILITY IDENTIFICATION", [
-    ["Mill Name", report.millName || ""],
-    ["Unit Name / No.", report.unitName || ""],
-    ["Address / City", report.fullAddress || ""],
-    ["Total Units", report.totalUnits || ""],
-    ["Survey Date", report.surveyDate || ""],
-    ["Surveyed By", report.surveyedByName || ""],
-    ["Contact Person", report.millContactPerson || ""],
-    ["Contact No.", report.millContactNumber || ""],
-  ]);
-
-  addSection("WASTE FLOW INFORMATION", [
-    ["Waste Flow Option", report.wasteFlowOption || ""],
-    ["Remarks", report.wasteFlowRemarks || ""],
-  ]);
-
-  addSection("INTERNET & CONNECTIVITY", [
-    ["Internet Available", report.internetAvailable || ""],
-    ["Connection Types", report.connectionTypes || ""],
-    ["Quality", report.internetQuality || ""],
-    ["ISP Provider", report.ispProviderName || ""],
-  ]);
-
-  addSection("POWER & COMPUTE", [
-    ["UPS Available", report.upsAvailable || ""],
-    ["UPS Capacity", report.upsCapacity || ""],
-    ["Backup Time", report.upsBackupTime || ""],
-    ["GPU / Compute", report.gpuCompute || ""],
-  ]);
-
-  addSection("GENERAL REMARKS", [["Remarks", report.generalRemarks || ""]]);
-
-  // Footer
-  const pageCount = (pdf as any).internal.pages.length - 1;
-  for (let page = 1; page <= pageCount; page++) {
-    pdf.setPage(page);
-    pdf.setDrawColor(226, 232, 240);
-    pdf.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...SLATE);
-
-    const footerText = companyProfile
-      ? `${companyProfile.company_name} · Textile Mill Survey Report`
-      : "Avira Technologies · Textile Mill Survey Report";
-
-    pdf.text(footerText, margin, pageHeight - 8);
-    pdf.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 8, {
-      align: "right",
-    });
+    pdf.text(companyProfile?.company_name || "ISSM", margin, pageHeight - 8);
+    pdf.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: "right" });
   }
 
   const fileName = `Textile_Survey_${report.millName?.replace(/\s+/g, "_") || "Report"}_${format(new Date(), "yyyyMMdd")}.pdf`;
