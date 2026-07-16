@@ -41,6 +41,7 @@ export default function SiteSurveyReports() {
   const filtered = useMemo(() => {
     if (!reports) return [];
     return reports.filter((report) =>
+      report.reportNumber?.toLowerCase().includes(search.toLowerCase()) ||
       report.clientFacility.toLowerCase().includes(search.toLowerCase()) ||
       report.focalPerson.toLowerCase().includes(search.toLowerCase()) ||
       report.contactNumber.includes(search)
@@ -196,7 +197,7 @@ export default function SiteSurveyReports() {
       <Card>
         <CardContent className="pt-6">
           <Input
-            placeholder="Search by facility, focal person, or contact number..."
+            placeholder="Search by report number, facility, focal person, or contact number..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="focus-visible:ring-2 focus-visible:ring-brand-primary"
