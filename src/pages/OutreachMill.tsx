@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
-import { Building2, FileUp, Loader2, MessageSquarePlus, Pencil, Plus, Search, Send, Trash2 } from "lucide-react";
+import { Building2, Download, FileUp, Loader2, MessageSquarePlus, Pencil, Plus, Search, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,6 +177,90 @@ export default function OutreachMill() {
     reader.readAsArrayBuffer(file);
   }
 
+  function downloadSampleExcel() {
+    const sampleData = [
+      {
+        "Spinning Mill": "Sample Textile Mills Ltd",
+        "City": "Ahmedabad",
+        "Address": "123 Industrial Zone, Ahmedabad",
+        "Phone": "+91-9876543210",
+        "Email": "contact@sampletextile.com",
+        "POC Name": "Rajesh Kumar",
+        "POC Number": "+91-9876543211",
+        "POC Email": "rajesh@sampletextile.com",
+        "Notes": "Large spinning mill with 500+ spindles"
+      },
+      {
+        "Spinning Mill": "Premier Spinning Company",
+        "City": "Surat",
+        "Address": "456 Business Park, Surat",
+        "Phone": "+91-8765432109",
+        "Email": "info@premierspinning.com",
+        "POC Name": "Priya Sharma",
+        "POC Number": "+91-8765432110",
+        "POC Email": "priya@premierspinning.com",
+        "Notes": "Medium-sized mill focused on premium yarns"
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 35 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 35 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mills");
+    XLSX.writeFile(wb, "outreach_mill_sample.xlsx");
+    toast.success("Sample Excel file downloaded");
+  }
+
+  function downloadMillsAsExcel() {
+    if (filteredMills.length === 0) {
+      toast.error("No mills to export");
+      return;
+    }
+
+    const exportData = filteredMills.map((mill) => ({
+      "Spinning Mill": mill.spinningMill,
+      "City": mill.city || "—",
+      "Address": mill.address || "—",
+      "Phone": mill.phone || "—",
+      "Email": mill.email || "—",
+      "POC Name": mill.pocName || "—",
+      "POC Number": mill.pocNumber || "—",
+      "POC Email": mill.pocEmail || "—",
+      "Notes": mill.notes || "—",
+      "Remarks Count": mill.remarks?.length || 0,
+      "Status": mill.transferredAt ? "Transferred" : "Active"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 35 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 35 },
+      { wch: 15 },
+      { wch: 15 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mills");
+    XLSX.writeFile(wb, `outreach_mills_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success(`${filteredMills.length} mill(s) exported`);
+  }
+
   return (
     <div className="min-h-full bg-slate-50/70 p-4 md:p-8"><div className="mx-auto max-w-[1600px] space-y-7">
       <div className="flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -187,7 +271,9 @@ export default function OutreachMill() {
         </div>
         <div className="flex flex-wrap gap-3">
           <input ref={uploadRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadSampleExcel}><Download className="mr-2 h-4 w-4" />Sample</Button>
           <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={() => uploadRef.current?.click()}><FileUp className="mr-2 h-4 w-4" />Import contacts</Button>
+          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadMillsAsExcel}><Download className="mr-2 h-4 w-4" />Export</Button>
           <Button className="h-10 bg-slate-950 px-4 shadow-sm hover:bg-slate-800" onClick={() => setFormOpen(true)}><Plus className="mr-2 h-4 w-4" />Add mill</Button>
         </div>
       </div>
