@@ -263,23 +263,32 @@ export default function OutreachMill() {
       return;
     }
 
-    const exportData = filteredMills.map((mill) => ({
-      "Spinning Mill": mill.spinningMill,
-      "Unit": mill.unit || "—",
-      "City": mill.city || "—",
-      "Address": mill.address || "—",
-      "Phone": mill.phone || "—",
-      "Email": mill.email || "—",
-      "POC Name": mill.pocName || "—",
-      "POC Number": mill.pocNumber || "—",
-      "POC Email": mill.pocEmail || "—",
-      "Notes": mill.notes || "—",
-      "Remarks": mill.remarks?.length
-        ? mill.remarks.map((remark) => `${remark.text} (${new Date(remark.createdAt).toLocaleString()})`).join("\n")
-        : "—",
-      "Remarks Count": mill.remarks?.length || 0,
-      "Status": getMillStatus(mill)
-    }));
+    const maxRemarks = Math.max(...filteredMills.map((mill) => mill.remarks?.length || 0));
+    const exportData = filteredMills.map((mill) => {
+      const row: Record<string, string | number> = {
+        "Spinning Mill": mill.spinningMill,
+        "Unit": mill.unit || "—",
+        "City": mill.city || "—",
+        "Address": mill.address || "—",
+        "Phone": mill.phone || "—",
+        "Email": mill.email || "—",
+        "POC Name": mill.pocName || "—",
+        "POC Number": mill.pocNumber || "—",
+        "POC Email": mill.pocEmail || "—",
+        "Notes": mill.notes || "—",
+      };
+
+      for (let index = 0; index < maxRemarks; index += 1) {
+        const remark = mill.remarks?.[index];
+        row[`Remark ${index + 1}`] = remark
+          ? `${remark.text} (${new Date(remark.createdAt).toLocaleString()})`
+          : "—";
+      }
+
+      row["Remarks Count"] = mill.remarks?.length || 0;
+      row["Status"] = getMillStatus(mill);
+      return row;
+    });
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     ws["!cols"] = [
@@ -293,9 +302,9 @@ export default function OutreachMill() {
       { wch: 18 },
       { wch: 25 },
       { wch: 35 },
-      { wch: 50 },
+      ...Array.from({ length: maxRemarks }, () => ({ wch: 50 })),
       { wch: 15 },
-      { wch: 15 }
+      { wch: 15 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Mills");
