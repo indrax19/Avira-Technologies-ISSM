@@ -237,6 +237,9 @@ export default function OutreachMill() {
       "POC Number": mill.pocNumber || "—",
       "POC Email": mill.pocEmail || "—",
       "Notes": mill.notes || "—",
+      "Remarks": mill.remarks?.length
+        ? mill.remarks.map((remark) => `${remark.text} (${new Date(remark.createdAt).toLocaleString()})`).join("\n")
+        : "—",
       "Remarks Count": mill.remarks?.length || 0,
       "Status": mill.transferredAt ? "Transferred" : "Active"
     }));
@@ -252,6 +255,7 @@ export default function OutreachMill() {
       { wch: 18 },
       { wch: 25 },
       { wch: 35 },
+      { wch: 50 },
       { wch: 15 },
       { wch: 15 }
     ];
@@ -271,7 +275,7 @@ export default function OutreachMill() {
         </div>
         <div className="flex flex-wrap gap-3">
           <input ref={uploadRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
-          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadSampleExcel}><Download className="mr-2 h-4 w-4" />Sample</Button>
+          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadSampleExcel}><Download className="mr-2 h-4 w-4" />Download sample</Button>
           <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={() => uploadRef.current?.click()}><FileUp className="mr-2 h-4 w-4" />Import contacts</Button>
           <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadMillsAsExcel}><Download className="mr-2 h-4 w-4" />Export</Button>
           <Button className="h-10 bg-slate-950 px-4 shadow-sm hover:bg-slate-800" onClick={() => setFormOpen(true)}><Plus className="mr-2 h-4 w-4" />Add mill</Button>
