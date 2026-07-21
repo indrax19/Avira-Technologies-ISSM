@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
-import { Building2, FileUp, Loader2, MessageSquarePlus, Pencil, Plus, Search, Send, Trash2 } from "lucide-react";
+import { Building2, Download, FileUp, Loader2, MessageSquarePlus, Pencil, Plus, Search, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,6 +177,90 @@ export default function OutreachMill() {
     reader.readAsArrayBuffer(file);
   }
 
+  function downloadSampleExcel() {
+    const sampleData = [
+      {
+        "Spinning Mill": "Sample Textile Mills Ltd",
+        "City": "Ahmedabad",
+        "Address": "123 Industrial Zone, Ahmedabad",
+        "Phone": "+91-9876543210",
+        "Email": "contact@sampletextile.com",
+        "POC Name": "Rajesh Kumar",
+        "POC Number": "+91-9876543211",
+        "POC Email": "rajesh@sampletextile.com",
+        "Notes": "Large spinning mill with 500+ spindles"
+      },
+      {
+        "Spinning Mill": "Premier Spinning Company",
+        "City": "Surat",
+        "Address": "456 Business Park, Surat",
+        "Phone": "+91-8765432109",
+        "Email": "info@premierspinning.com",
+        "POC Name": "Priya Sharma",
+        "POC Number": "+91-8765432110",
+        "POC Email": "priya@premierspinning.com",
+        "Notes": "Medium-sized mill focused on premium yarns"
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 35 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 35 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mills");
+    XLSX.writeFile(wb, "outreach_mill_sample.xlsx");
+    toast.success("Sample Excel file downloaded");
+  }
+
+  function downloadMillsAsExcel() {
+    if (filteredMills.length === 0) {
+      toast.error("No mills to export");
+      return;
+    }
+
+    const exportData = filteredMills.map((mill) => ({
+      "Spinning Mill": mill.spinningMill,
+      "City": mill.city || "—",
+      "Address": mill.address || "—",
+      "Phone": mill.phone || "—",
+      "Email": mill.email || "—",
+      "POC Name": mill.pocName || "—",
+      "POC Number": mill.pocNumber || "—",
+      "POC Email": mill.pocEmail || "—",
+      "Notes": mill.notes || "—",
+      "Remarks Count": mill.remarks?.length || 0,
+      "Status": mill.transferredAt ? "Transferred" : "Active"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 35 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 35 },
+      { wch: 15 },
+      { wch: 15 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mills");
+    XLSX.writeFile(wb, `outreach_mills_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success(`${filteredMills.length} mill(s) exported`);
+  }
+
   return (
     <div className="min-h-full bg-slate-50/70 p-4 md:p-8"><div className="mx-auto max-w-[1600px] space-y-7">
       <div className="flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -187,7 +271,9 @@ export default function OutreachMill() {
         </div>
         <div className="flex flex-wrap gap-3">
           <input ref={uploadRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadSampleExcel}><Download className="mr-2 h-4 w-4" />Sample</Button>
           <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={() => uploadRef.current?.click()}><FileUp className="mr-2 h-4 w-4" />Import contacts</Button>
+          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadMillsAsExcel}><Download className="mr-2 h-4 w-4" />Export</Button>
           <Button className="h-10 bg-slate-950 px-4 shadow-sm hover:bg-slate-800" onClick={() => setFormOpen(true)}><Plus className="mr-2 h-4 w-4" />Add mill</Button>
         </div>
       </div>
@@ -205,7 +291,65 @@ export default function OutreachMill() {
 
       <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}><DialogContent className="max-h-[90vh] overflow-y-auto border-slate-200 p-0 shadow-2xl sm:max-w-3xl"><DialogHeader className="border-b border-slate-100 bg-slate-50/70 px-6 py-5"><DialogTitle className="text-xl text-slate-950">{editingMill ? "Edit outreach mill" : "Add outreach mill"}</DialogTitle><DialogDescription>Save the contact information for this spinning mill.</DialogDescription></DialogHeader><form onSubmit={(event: FormEvent) => { event.preventDefault(); saveMill.mutate(); }} className="space-y-6 px-6 py-6"><div className="grid gap-5 sm:grid-cols-2"><Field label="Spinning Mill *" value={form.spinningMill} onChange={(value) => updateField("spinningMill", value)} /><Field label="City" value={form.city || ""} onChange={(value) => updateField("city", value)} /><Field label="Phone" value={form.phone || ""} onChange={(value) => updateField("phone", value)} /><Field label="Email" type="email" value={form.email || ""} onChange={(value) => updateField("email", value)} /><Field label="POC Name" value={form.pocName || ""} onChange={(value) => updateField("pocName", value)} /><Field label="POC Number" value={form.pocNumber || ""} onChange={(value) => updateField("pocNumber", value)} /><Field label="POC Email" type="email" value={form.pocEmail || ""} onChange={(value) => updateField("pocEmail", value)} /><div className="sm:col-span-2"><Label>Address</Label><Textarea value={form.address || ""} onChange={(event) => updateField("address", event.target.value)} className="mt-2" /></div><div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes || ""} onChange={(event) => updateField("notes", event.target.value)} className="mt-2" /></div></div><DialogFooter className="border-t border-slate-100 pt-5"><Button type="button" variant="outline" onClick={closeForm}>Cancel</Button><Button type="submit" disabled={saveMill.isPending}>{saveMill.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingMill ? "Save changes" : "Save mill"}</Button></DialogFooter></form></DialogContent></Dialog>
 
-      <Dialog open={!!remarksMill} onOpenChange={(open) => !open && setRemarksMill(null)}><DialogContent><DialogHeader><DialogTitle>Remarks history</DialogTitle><DialogDescription>{remarksMill?.spinningMill}</DialogDescription></DialogHeader><div className="max-h-64 space-y-3 overflow-y-auto">{remarksMill?.remarks?.length ? remarksMill.remarks.map((remark) => <div key={remark.id} className="rounded-lg border bg-muted/30 p-3"><p>{remark.text}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(remark.createdAt).toLocaleString()} {remark.createdBy ? `• ${remark.createdBy}` : ""}</p></div>) : <p className="py-4 text-center text-sm text-muted-foreground">No remarks have been added yet.</p>}</div><Textarea value={remarkText} onChange={(event) => setRemarkText(event.target.value)} placeholder="Add a follow-up remark" /><DialogFooter><Button onClick={() => addRemark.mutate()} disabled={addRemark.isPending || !remarkText.trim()}>{addRemark.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save remark</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={!!remarksMill} onOpenChange={(open) => !open && setRemarksMill(null)}>
+        <DialogContent className="max-w-2xl border-slate-200 shadow-2xl">
+          <DialogHeader className="border-b border-slate-100 pb-4">
+            <DialogTitle className="text-xl text-slate-950">Follow-up Remarks</DialogTitle>
+            <DialogDescription className="text-base font-semibold text-slate-700 mt-2">{remarksMill?.spinningMill}</DialogDescription>
+            <p className="text-xs text-slate-500 mt-1">{remarksMill?.remarks?.length || 0} remarks in history</p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Remarks List Section */}
+            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">History</h3>
+              <div className="max-h-72 overflow-y-auto space-y-3 pr-2">
+                {remarksMill?.remarks?.length ? (
+                  [...(remarksMill.remarks || [])].reverse().map((remark) => (
+                    <div key={remark.id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 hover:bg-blue-50 transition-colors">
+                      <p className="text-sm text-slate-900 leading-relaxed">{remark.text}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <p className="text-xs text-slate-500">{new Date(remark.createdAt).toLocaleString()}</p>
+                        {remark.createdBy && <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full">{remark.createdBy}</span>}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-slate-500">No remarks yet. Add your first follow-up below.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add New Remark Section */}
+            <div className="space-y-3 border-t border-slate-200 pt-4">
+              <label className="block text-sm font-semibold text-slate-900">Add Remark</label>
+              <Textarea
+                value={remarkText}
+                onChange={(event) => setRemarkText(event.target.value)}
+                placeholder="Document follow-up actions, status updates, or important notes..."
+                className="min-h-24 resize-none border-slate-300"
+              />
+              <p className="text-xs text-slate-500">{remarkText.length} characters</p>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 mt-4 pt-4">
+            <Button variant="outline" onClick={() => setRemarksMill(null)} className="border-slate-300">
+              Close
+            </Button>
+            <Button
+              onClick={() => addRemark.mutate()}
+              disabled={addRemark.isPending || !remarkText.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {addRemark.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Remark
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!transferMill} onOpenChange={(open) => !open && setTransferMill(null)}><DialogContent><DialogHeader><DialogTitle>Transfer to Project Tracking</DialogTitle><DialogDescription>Select the project category where {transferMill?.spinningMill} should be added.</DialogDescription></DialogHeader><div className="space-y-2"><Label>Available project categories</Label><Select value={selectedProjectId} onValueChange={setSelectedProjectId}><SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger><SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id!}>{project.name} ({project.projectType || "ISSM"})</SelectItem>)}</SelectContent></Select></div><DialogFooter><Button variant="outline" onClick={() => setTransferMill(null)}>Cancel</Button><Button onClick={() => transferMillMutation.mutate()} disabled={transferMillMutation.isPending || !selectedProjectId}>{transferMillMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Transfer mill</Button></DialogFooter></DialogContent></Dialog>
     </div></div>

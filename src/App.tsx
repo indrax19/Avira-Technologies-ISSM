@@ -117,7 +117,7 @@ const App = () => (
               <Route path="/technical-projects/:technicalProjectId/sites/:id" element={<ProtectedRoute requiredPermission="sites"><Suspense fallback={<PageLoader />}><SiteDetailsForm /></Suspense></ProtectedRoute>} />
               <Route path="/certificates/:siteId" element={<ProtectedRoute requiredPermission="sites"><Suspense fallback={<PageLoader />}><DeploymentCertificates /></Suspense></ProtectedRoute>} />
               <Route path="/project-tracking" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectTracking /></Suspense></ProtectedRoute>} />
-              <Route path="/outreach-mill" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><OutreachMill /></Suspense></ProtectedRoute>} />
+              <Route path="/outreach-mill" element={<ProtectedRoute requiredPermission="outreach-mill"><Suspense fallback={<PageLoader />}><OutreachMill /></Suspense></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><Projects /></Suspense></ProtectedRoute>} />
               <Route path="/projects/:id" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectDetail /></Suspense></ProtectedRoute>} />
               <Route path="/project-sites/new/:projectId" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectSiteForm /></Suspense></ProtectedRoute>} />
