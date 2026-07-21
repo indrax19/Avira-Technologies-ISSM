@@ -12,7 +12,6 @@ export interface OutreachRemark {
 export interface OutreachMill {
   id?: string;
   spinningMill: string;
-  serialNumber?: string;
   unit?: string;
   city?: string;
   address?: string;
