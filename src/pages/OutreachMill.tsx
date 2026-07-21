@@ -291,7 +291,65 @@ export default function OutreachMill() {
 
       <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}><DialogContent className="max-h-[90vh] overflow-y-auto border-slate-200 p-0 shadow-2xl sm:max-w-3xl"><DialogHeader className="border-b border-slate-100 bg-slate-50/70 px-6 py-5"><DialogTitle className="text-xl text-slate-950">{editingMill ? "Edit outreach mill" : "Add outreach mill"}</DialogTitle><DialogDescription>Save the contact information for this spinning mill.</DialogDescription></DialogHeader><form onSubmit={(event: FormEvent) => { event.preventDefault(); saveMill.mutate(); }} className="space-y-6 px-6 py-6"><div className="grid gap-5 sm:grid-cols-2"><Field label="Spinning Mill *" value={form.spinningMill} onChange={(value) => updateField("spinningMill", value)} /><Field label="City" value={form.city || ""} onChange={(value) => updateField("city", value)} /><Field label="Phone" value={form.phone || ""} onChange={(value) => updateField("phone", value)} /><Field label="Email" type="email" value={form.email || ""} onChange={(value) => updateField("email", value)} /><Field label="POC Name" value={form.pocName || ""} onChange={(value) => updateField("pocName", value)} /><Field label="POC Number" value={form.pocNumber || ""} onChange={(value) => updateField("pocNumber", value)} /><Field label="POC Email" type="email" value={form.pocEmail || ""} onChange={(value) => updateField("pocEmail", value)} /><div className="sm:col-span-2"><Label>Address</Label><Textarea value={form.address || ""} onChange={(event) => updateField("address", event.target.value)} className="mt-2" /></div><div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes || ""} onChange={(event) => updateField("notes", event.target.value)} className="mt-2" /></div></div><DialogFooter className="border-t border-slate-100 pt-5"><Button type="button" variant="outline" onClick={closeForm}>Cancel</Button><Button type="submit" disabled={saveMill.isPending}>{saveMill.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingMill ? "Save changes" : "Save mill"}</Button></DialogFooter></form></DialogContent></Dialog>
 
-      <Dialog open={!!remarksMill} onOpenChange={(open) => !open && setRemarksMill(null)}><DialogContent><DialogHeader><DialogTitle>Remarks history</DialogTitle><DialogDescription>{remarksMill?.spinningMill}</DialogDescription></DialogHeader><div className="max-h-64 space-y-3 overflow-y-auto">{remarksMill?.remarks?.length ? remarksMill.remarks.map((remark) => <div key={remark.id} className="rounded-lg border bg-muted/30 p-3"><p>{remark.text}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(remark.createdAt).toLocaleString()} {remark.createdBy ? `• ${remark.createdBy}` : ""}</p></div>) : <p className="py-4 text-center text-sm text-muted-foreground">No remarks have been added yet.</p>}</div><Textarea value={remarkText} onChange={(event) => setRemarkText(event.target.value)} placeholder="Add a follow-up remark" /><DialogFooter><Button onClick={() => addRemark.mutate()} disabled={addRemark.isPending || !remarkText.trim()}>{addRemark.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save remark</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={!!remarksMill} onOpenChange={(open) => !open && setRemarksMill(null)}>
+        <DialogContent className="max-w-2xl border-slate-200 shadow-2xl">
+          <DialogHeader className="border-b border-slate-100 pb-4">
+            <DialogTitle className="text-xl text-slate-950">Follow-up Remarks</DialogTitle>
+            <DialogDescription className="text-base font-semibold text-slate-700 mt-2">{remarksMill?.spinningMill}</DialogDescription>
+            <p className="text-xs text-slate-500 mt-1">{remarksMill?.remarks?.length || 0} remarks in history</p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Remarks List Section */}
+            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">History</h3>
+              <div className="max-h-72 overflow-y-auto space-y-3 pr-2">
+                {remarksMill?.remarks?.length ? (
+                  [...(remarksMill.remarks || [])].reverse().map((remark) => (
+                    <div key={remark.id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 hover:bg-blue-50 transition-colors">
+                      <p className="text-sm text-slate-900 leading-relaxed">{remark.text}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <p className="text-xs text-slate-500">{new Date(remark.createdAt).toLocaleString()}</p>
+                        {remark.createdBy && <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full">{remark.createdBy}</span>}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-slate-500">No remarks yet. Add your first follow-up below.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add New Remark Section */}
+            <div className="space-y-3 border-t border-slate-200 pt-4">
+              <label className="block text-sm font-semibold text-slate-900">Add Remark</label>
+              <Textarea
+                value={remarkText}
+                onChange={(event) => setRemarkText(event.target.value)}
+                placeholder="Document follow-up actions, status updates, or important notes..."
+                className="min-h-24 resize-none border-slate-300"
+              />
+              <p className="text-xs text-slate-500">{remarkText.length} characters</p>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 mt-4 pt-4">
+            <Button variant="outline" onClick={() => setRemarksMill(null)} className="border-slate-300">
+              Close
+            </Button>
+            <Button
+              onClick={() => addRemark.mutate()}
+              disabled={addRemark.isPending || !remarkText.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {addRemark.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Remark
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!transferMill} onOpenChange={(open) => !open && setTransferMill(null)}><DialogContent><DialogHeader><DialogTitle>Transfer to Project Tracking</DialogTitle><DialogDescription>Select the project category where {transferMill?.spinningMill} should be added.</DialogDescription></DialogHeader><div className="space-y-2"><Label>Available project categories</Label><Select value={selectedProjectId} onValueChange={setSelectedProjectId}><SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger><SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id!}>{project.name} ({project.projectType || "ISSM"})</SelectItem>)}</SelectContent></Select></div><DialogFooter><Button variant="outline" onClick={() => setTransferMill(null)}>Cancel</Button><Button onClick={() => transferMillMutation.mutate()} disabled={transferMillMutation.isPending || !selectedProjectId}>{transferMillMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Transfer mill</Button></DialogFooter></DialogContent></Dialog>
     </div></div>
