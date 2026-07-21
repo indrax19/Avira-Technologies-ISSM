@@ -81,6 +81,7 @@ export default function OutreachMill() {
     onSuccess: () => {
       toast.success("Remark saved to history");
       setRemarkText("");
+      setRemarksMill(null);
     },
     onError: (error: Error) => toast.error(error.message),
   });
