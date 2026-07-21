@@ -14,6 +14,8 @@ import { useAuth } from "@/context/AuthContext";
 import { outreachMillsAPI, type OutreachMill, type OutreachRemark } from "@/integrations/firebase/outreachMillsAPI";
 import { parentProjectsAPI, type ParentProject } from "@/integrations/firebase/parentProjectsAPI";
 import { projectTrackingAPI } from "@/integrations/firebase/projectTrackingAPI";
+import { textileSurveyReportAPI } from "@/integrations/firebase/siteSurveyReportAPI";
+import { defaultTextileData } from "@/components/SurveyTemplates/SurveyTemplateBase";
 
 const emptyMill = (): Omit<OutreachMill, "id" | "created_at" | "updated_at"> => ({
   spinningMill: "",
@@ -49,7 +51,9 @@ export default function OutreachMill() {
   const [remarksMill, setRemarksMill] = useState<OutreachMill | null>(null);
   const [remarkText, setRemarkText] = useState("");
   const [transferMill, setTransferMill] = useState<OutreachMill | null>(null);
+  const [transferDestination, setTransferDestination] = useState<"project-tracking" | "survey-reports">("project-tracking");
   const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => outreachMillsAPI.subscribeAll(setMills, () => toast.error("Unable to load outreach mills.")), []);
@@ -91,8 +95,31 @@ export default function OutreachMill() {
 
   const transferMillMutation = useMutation({
     mutationFn: async () => {
-      if (!transferMill?.id || !selectedProjectId) throw new Error("Select a project category");
-      const today = new Date().toISOString().slice(0, 10);
+      if (!transferMill?.id) throw new Error("Select a mill to transfer");
+      const now = new Date().toISOString();
+
+      if (transferDestination === "survey-reports") {
+        const report = await textileSurveyReportAPI.create({
+          ...defaultTextileData,
+          millName: transferMill.spinningMill,
+          unitName: transferMill.unit || "Not specified",
+          fullAddress: [transferMill.address, transferMill.city].filter(Boolean).join(", "),
+          surveyDate: now.slice(0, 10),
+          surveyedByName: appUser?.fullName || "",
+          millContactPerson: transferMill.pocName || "Not specified",
+          millContactNumber: transferMill.pocNumber || transferMill.phone || transferMill.email || "Not specified",
+          generalRemarks: transferMill.notes || "",
+        });
+        await outreachMillsAPI.update(transferMill.id, {
+          status: "Transferred",
+          transferredSurveyReportId: report.id,
+          transferredAt: now,
+        });
+        return "Survey Reports";
+      }
+
+      if (!selectedProjectId) throw new Error("Select a project category");
+      const today = now.slice(0, 10);
       await projectTrackingAPI.create({
         project_id: selectedProjectId,
         millName: transferMill.spinningMill,
@@ -114,12 +141,14 @@ export default function OutreachMill() {
         hardwareStatus: "",
         hardwareDeliveryStatus: "Pending Dispatch",
       });
-      await outreachMillsAPI.update(transferMill.id, { status: "Transferred", transferredProjectId: selectedProjectId, transferredAt: new Date().toISOString() });
+      await outreachMillsAPI.update(transferMill.id, { status: "Transferred", transferredProjectId: selectedProjectId, transferredAt: now });
+      return "Project Tracking";
     },
-    onSuccess: () => {
-      toast.success("Mill transferred to Project Tracking");
+    onSuccess: (destination) => {
+      toast.success(`Mill transferred to ${destination}`);
       setTransferMill(null);
       setSelectedProjectId("");
+      setTransferDestination("project-tracking");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -175,6 +204,7 @@ export default function OutreachMill() {
         if (!contacts.length) throw new Error("No Spinning Mill column data was found");
         await Promise.all(contacts.map((contact) => outreachMillsAPI.create(contact)));
         toast.success(`${contacts.length} mill contacts imported`);
+        setImportOpen(false);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Import failed");
       }
@@ -235,23 +265,32 @@ export default function OutreachMill() {
       return;
     }
 
-    const exportData = filteredMills.map((mill) => ({
-      "Spinning Mill": mill.spinningMill,
-      "Unit": mill.unit || "—",
-      "City": mill.city || "—",
-      "Address": mill.address || "—",
-      "Phone": mill.phone || "—",
-      "Email": mill.email || "—",
-      "POC Name": mill.pocName || "—",
-      "POC Number": mill.pocNumber || "—",
-      "POC Email": mill.pocEmail || "—",
-      "Notes": mill.notes || "—",
-      "Remarks": mill.remarks?.length
-        ? mill.remarks.map((remark) => `${remark.text} (${new Date(remark.createdAt).toLocaleString()})`).join("\n")
-        : "—",
-      "Remarks Count": mill.remarks?.length || 0,
-      "Status": getMillStatus(mill)
-    }));
+    const maxRemarks = Math.max(...filteredMills.map((mill) => mill.remarks?.length || 0));
+    const exportData = filteredMills.map((mill) => {
+      const row: Record<string, string | number> = {
+        "Spinning Mill": mill.spinningMill,
+        "Unit": mill.unit || "—",
+        "City": mill.city || "—",
+        "Address": mill.address || "—",
+        "Phone": mill.phone || "—",
+        "Email": mill.email || "—",
+        "POC Name": mill.pocName || "—",
+        "POC Number": mill.pocNumber || "—",
+        "POC Email": mill.pocEmail || "—",
+        "Notes": mill.notes || "—",
+      };
+
+      for (let index = 0; index < maxRemarks; index += 1) {
+        const remark = mill.remarks?.[index];
+        row[`Remark ${index + 1}`] = remark
+          ? `${remark.text} (${new Date(remark.createdAt).toLocaleString()})`
+          : "—";
+      }
+
+      row["Remarks Count"] = mill.remarks?.length || 0;
+      row["Status"] = getMillStatus(mill);
+      return row;
+    });
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     ws["!cols"] = [
@@ -265,9 +304,9 @@ export default function OutreachMill() {
       { wch: 18 },
       { wch: 25 },
       { wch: 35 },
-      { wch: 50 },
+      ...Array.from({ length: maxRemarks }, () => ({ wch: 50 })),
       { wch: 15 },
-      { wch: 15 }
+      { wch: 15 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Mills");
@@ -276,32 +315,49 @@ export default function OutreachMill() {
   }
 
   return (
-    <div className="min-h-full bg-slate-50/70 p-4 md:p-8"><div className="mx-auto max-w-[1600px] space-y-7">
-      <div className="flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="min-h-full bg-slate-50/70 p-3 sm:p-5 lg:p-8"><div className="mx-auto max-w-[1600px] space-y-5 sm:space-y-7">
+      <div className="flex flex-col gap-5 border-b border-slate-200 pb-5 sm:pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="mb-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Lead management</div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Outreach Mill</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Outreach Mill</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Manage spinning-mill contacts, outreach notes, and project handovers from one focused workspace.</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
           <input ref={uploadRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
-          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadSampleExcel}><Download className="mr-2 h-4 w-4" />Download sample</Button>
-          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={() => uploadRef.current?.click()}><FileUp className="mr-2 h-4 w-4" />Import contacts</Button>
-          <Button variant="outline" className="h-10 border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50" onClick={downloadMillsAsExcel}><Download className="mr-2 h-4 w-4" />Export</Button>
-          <Button className="h-10 bg-slate-950 px-4 shadow-sm hover:bg-slate-800" onClick={() => setFormOpen(true)}><Plus className="mr-2 h-4 w-4" />Add mill</Button>
+          <Button variant="outline" className="h-11 w-full border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50 sm:h-10 sm:w-auto" onClick={() => setImportOpen(true)}><FileUp className="mr-2 h-4 w-4" />Import contacts</Button>
+          <Button variant="outline" className="h-11 w-full border-slate-300 bg-white px-4 shadow-sm hover:bg-slate-50 sm:h-10 sm:w-auto" onClick={downloadMillsAsExcel}><Download className="mr-2 h-4 w-4" />Export</Button>
+          <Button className="h-11 w-full bg-slate-950 px-4 shadow-sm hover:bg-slate-800 sm:h-10 sm:w-auto" onClick={() => setFormOpen(true)}><Plus className="mr-2 h-4 w-4" />Add mill</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="border-slate-200 bg-white shadow-sm"><CardContent className="flex items-center gap-4 p-5"><div className="rounded-xl bg-blue-100 p-3 text-blue-600"><Building2 className="h-5 w-5" /></div><div><p className="text-sm text-muted-foreground">Total mills</p><p className="text-2xl font-bold">{mills.length}</p></div></CardContent></Card>
-        <Card className="border-slate-200 bg-white shadow-sm"><CardContent className="flex items-center gap-4 p-5"><div className="rounded-xl bg-amber-100 p-3 text-amber-600"><MessageSquarePlus className="h-5 w-5" /></div><div><p className="text-sm text-muted-foreground">Active outreach</p><p className="text-2xl font-bold">{mills.filter((mill) => !mill.transferredAt).length}</p></div></CardContent></Card>
-        <Card className="border-slate-200 bg-white shadow-sm"><CardContent className="flex items-center gap-4 p-5"><div className="rounded-xl bg-emerald-100 p-3 text-emerald-600"><Send className="h-5 w-5" /></div><div><p className="text-sm text-muted-foreground">Transferred</p><p className="text-2xl font-bold">{mills.filter((mill) => mill.transferredAt).length}</p></div></CardContent></Card>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <Card className="border-slate-200 bg-white shadow-sm"><CardContent className="flex min-h-[104px] items-center gap-4 p-4 sm:p-5"><div className="rounded-xl bg-blue-100 p-3 text-blue-600"><Building2 className="h-5 w-5" /></div><div><p className="text-sm text-muted-foreground">Total mills</p><p className="text-2xl font-bold">{mills.length}</p></div></CardContent></Card>
+        <Card className="border-slate-200 bg-white shadow-sm"><CardContent className="flex min-h-[104px] items-center gap-4 p-4 sm:p-5"><div className="rounded-xl bg-amber-100 p-3 text-amber-600"><MessageSquarePlus className="h-5 w-5" /></div><div><p className="text-sm text-muted-foreground">Active outreach</p><p className="text-2xl font-bold">{mills.filter((mill) => !mill.transferredAt).length}</p></div></CardContent></Card>
+        <Card className="border-slate-200 bg-white shadow-sm"><CardContent className="flex min-h-[104px] items-center gap-4 p-4 sm:p-5"><div className="rounded-xl bg-emerald-100 p-3 text-emerald-600"><Send className="h-5 w-5" /></div><div><p className="text-sm text-muted-foreground">Transferred</p><p className="text-2xl font-bold">{mills.filter((mill) => mill.transferredAt).length}</p></div></CardContent></Card>
       </div>
 
       <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
-        <CardHeader className="gap-4 border-b border-slate-100 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle className="text-lg text-slate-950">Mill contacts</CardTitle><p className="mt-1 text-sm text-slate-500">Keep contact details and follow-up history current.</p></div><div className="relative w-full sm:w-72"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search mills or contacts" className="pl-9" /></div></CardHeader>
-        <CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-sm"><thead className="border-y border-slate-100 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3 font-medium">Sr.</th><th className="px-5 py-3 font-medium">Spinning Mill</th><th className="px-4 py-3 font-medium">Unit</th><th className="px-4 py-3 font-medium">City</th><th className="px-4 py-3 font-medium">Phone / Email</th><th className="px-4 py-3 font-medium">POC</th><th className="px-4 py-3 font-medium">Remarks</th><th className="px-4 py-3 font-medium">Status</th><th className="px-5 py-3 text-right font-medium">Actions</th></tr></thead><tbody>{filteredMills.map((mill, index) => <tr key={mill.id} className={`border-b border-slate-100 last:border-0 hover:bg-blue-50/30 ${getMillStatus(mill) === "Working" ? "bg-blue-50/70 hover:bg-blue-100/70" : ""}`}><td className="px-5 py-4">{index + 1}</td><td className="px-5 py-4 font-semibold">{mill.spinningMill}<p className="mt-1 max-w-64 truncate font-normal text-muted-foreground">{mill.address || "No address added"}</p></td><td className="px-4 py-4">{mill.unit || "—"}</td><td className="px-4 py-4">{mill.city || "—"}</td><td className="px-4 py-4"><p>{mill.phone || "—"}</p><p className="mt-1 text-muted-foreground">{mill.email || "—"}</p></td><td className="px-4 py-4"><p>{mill.pocName || "—"}</p><p className="mt-1 text-muted-foreground">{mill.pocNumber || mill.pocEmail || "—"}</p></td><td className="px-4 py-4"><Button variant="outline" size="sm" onClick={() => setRemarksMill(mill)}>{mill.remarks?.length || 0} history</Button></td><td className="px-4 py-4"><span className={getMillStatus(mill) === "Transferred" ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700" : getMillStatus(mill) === "Working" ? "rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm ring-2 ring-blue-200" : "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700"}>{getMillStatus(mill) === "Active" ? "Outreach" : getMillStatus(mill)}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" onClick={() => openEdit(mill)} aria-label="Edit mill"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => setRemarksMill(mill)} aria-label="Add remark"><MessageSquarePlus className="h-4 w-4" /></Button>{!mill.transferredAt && <Button variant="outline" size="sm" onClick={() => setTransferMill(mill)}><Send className="mr-1.5 h-3.5 w-3.5" />Transfer</Button>}<Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => mill.id && deleteMill.mutate(mill.id)} aria-label="Delete mill"><Trash2 className="h-4 w-4" /></Button></div></td></tr>)}{!filteredMills.length && <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No mill contacts found. Add a mill or import the supplied spreadsheet.</td></tr>}</tbody></table></div></CardContent>
+        <CardHeader className="gap-4 border-b border-slate-100 bg-white px-4 py-4 sm:px-5 sm:py-5 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle className="text-lg text-slate-950">Mill contacts</CardTitle><p className="mt-1 text-sm text-slate-500">Keep contact details and follow-up history current.</p></div><div className="relative w-full sm:w-72"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search mills or contacts" className="h-11 pl-9 sm:h-10" /></div></CardHeader>
+        <CardContent className="p-0"><div className="border-t border-slate-100 bg-slate-50/60 px-4 py-2 text-xs text-slate-500 sm:hidden">Swipe left and right to view all contact details.</div><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-xs sm:text-sm"><thead className="border-y border-slate-100 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3 font-medium">Sr.</th><th className="px-5 py-3 font-medium">Spinning Mill</th><th className="px-4 py-3 font-medium">Unit</th><th className="px-4 py-3 font-medium">City</th><th className="px-4 py-3 font-medium">Phone / Email</th><th className="px-4 py-3 font-medium">POC</th><th className="px-4 py-3 font-medium">Remarks</th><th className="px-4 py-3 font-medium">Status</th><th className="px-5 py-3 text-right font-medium">Actions</th></tr></thead><tbody>{filteredMills.map((mill, index) => <tr key={mill.id} className={`border-b border-slate-100 last:border-0 hover:bg-blue-50/30 ${getMillStatus(mill) === "Working" ? "bg-blue-50/70 hover:bg-blue-100/70" : ""}`}><td className="px-5 py-4">{index + 1}</td><td className="px-5 py-4 font-semibold">{mill.spinningMill}<p className="mt-1 max-w-64 truncate font-normal text-muted-foreground">{mill.address || "No address added"}</p></td><td className="px-4 py-4">{mill.unit || "—"}</td><td className="px-4 py-4">{mill.city || "—"}</td><td className="px-4 py-4"><p>{mill.phone || "—"}</p><p className="mt-1 text-muted-foreground">{mill.email || "—"}</p></td><td className="px-4 py-4"><p>{mill.pocName || "—"}</p><p className="mt-1 text-muted-foreground">{mill.pocNumber || mill.pocEmail || "—"}</p></td><td className="px-4 py-4"><Button variant="outline" size="sm" onClick={() => setRemarksMill(mill)}>{mill.remarks?.length || 0} history</Button></td><td className="px-4 py-4"><span className={getMillStatus(mill) === "Transferred" ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700" : getMillStatus(mill) === "Working" ? "rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm ring-2 ring-blue-200" : "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700"}>{getMillStatus(mill) === "Active" ? "Outreach" : getMillStatus(mill)}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" onClick={() => openEdit(mill)} aria-label="Edit mill"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => setRemarksMill(mill)} aria-label="Add remark"><MessageSquarePlus className="h-4 w-4" /></Button>{!mill.transferredAt && <Button variant="outline" size="sm" onClick={() => setTransferMill(mill)}><Send className="mr-1.5 h-3.5 w-3.5" />Transfer</Button>}<Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => mill.id && deleteMill.mutate(mill.id)} aria-label="Delete mill"><Trash2 className="h-4 w-4" /></Button></div></td></tr>)}{!filteredMills.length && <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No mill contacts found. Add a mill or import the supplied spreadsheet.</td></tr>}</tbody></table></div></CardContent>
       </Card>
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="w-[calc(100%-1.5rem)] rounded-xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import contacts</DialogTitle>
+            <DialogDescription>Download the sample format or upload your outreach mill contacts file.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Button variant="outline" className="w-full justify-start" onClick={downloadSampleExcel}>
+              <Download className="mr-2 h-4 w-4" />Download sample Excel
+            </Button>
+            <Button className="w-full justify-start bg-slate-950 hover:bg-slate-800" onClick={() => uploadRef.current?.click()}>
+              <FileUp className="mr-2 h-4 w-4" />Choose Excel or CSV file
+            </Button>
+            <p className="text-xs text-slate-500">Supported formats: .xlsx, .xls, .csv</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}><DialogContent className="max-h-[90vh] overflow-y-auto border-slate-200 p-0 shadow-2xl sm:max-w-3xl"><DialogHeader className="border-b border-slate-100 bg-slate-50/70 px-6 py-5"><DialogTitle className="text-xl text-slate-950">{editingMill ? "Edit outreach mill" : "Add outreach mill"}</DialogTitle><DialogDescription>Save the contact information for this spinning mill.</DialogDescription></DialogHeader><form onSubmit={(event: FormEvent) => { event.preventDefault(); saveMill.mutate(); }} className="space-y-6 px-6 py-6"><div className="grid gap-5 sm:grid-cols-2"><Field label="Spinning Mill *" value={form.spinningMill} onChange={(value) => updateField("spinningMill", value)} /><Field label="Unit" value={form.unit || ""} onChange={(value) => updateField("unit", value)} /><Field label="City" value={form.city || ""} onChange={(value) => updateField("city", value)} /><Field label="Phone" value={form.phone || ""} onChange={(value) => updateField("phone", value)} /><Field label="Email" type="email" value={form.email || ""} onChange={(value) => updateField("email", value)} /><Field label="POC Name" value={form.pocName || ""} onChange={(value) => updateField("pocName", value)} /><Field label="POC Number" value={form.pocNumber || ""} onChange={(value) => updateField("pocNumber", value)} /><Field label="POC Email" type="email" value={form.pocEmail || ""} onChange={(value) => updateField("pocEmail", value)} /><div className="sm:col-span-2"><Label>Address</Label><Textarea value={form.address || ""} onChange={(event) => updateField("address", event.target.value)} className="mt-2" /></div><div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes || ""} onChange={(event) => updateField("notes", event.target.value)} className="mt-2" /></div></div><DialogFooter className="border-t border-slate-100 pt-5"><Button type="button" variant="outline" onClick={closeForm}>Cancel</Button><Button type="submit" disabled={saveMill.isPending}>{saveMill.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingMill ? "Save changes" : "Save mill"}</Button></DialogFooter></form></DialogContent></Dialog>
 
@@ -363,7 +419,42 @@ export default function OutreachMill() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!transferMill} onOpenChange={(open) => !open && setTransferMill(null)}><DialogContent><DialogHeader><DialogTitle>Transfer to Project Tracking</DialogTitle><DialogDescription>Select the project category where {transferMill?.spinningMill} should be added.</DialogDescription></DialogHeader><div className="space-y-2"><Label>Available project categories</Label><Select value={selectedProjectId} onValueChange={setSelectedProjectId}><SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger><SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id!}>{project.name} ({project.projectType || "ISSM"})</SelectItem>)}</SelectContent></Select></div><DialogFooter><Button variant="outline" onClick={() => setTransferMill(null)}>Cancel</Button><Button onClick={() => transferMillMutation.mutate()} disabled={transferMillMutation.isPending || !selectedProjectId}>{transferMillMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Transfer mill</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={!!transferMill} onOpenChange={(open) => !open && setTransferMill(null)}>
+        <DialogContent className="max-h-[90vh] w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Transfer site data</DialogTitle>
+            <DialogDescription>Choose where {transferMill?.spinningMill} should be transferred.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Transfer destination</Label>
+              <Select value={transferDestination} onValueChange={(value: "project-tracking" | "survey-reports") => setTransferDestination(value)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="project-tracking">Project Tracking</SelectItem>
+                  <SelectItem value="survey-reports">Survey Reports</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {transferDestination === "project-tracking" && (
+              <div className="space-y-2">
+                <Label>Available project categories</Label>
+                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
+                  <SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id!}>{project.name} ({project.projectType || "ISSM"})</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            {transferDestination === "survey-reports" && <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">A textile survey report will be created with the mill contact details prefilled.</p>}
+          </div>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setTransferMill(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={() => transferMillMutation.mutate()} disabled={transferMillMutation.isPending || (transferDestination === "project-tracking" && !selectedProjectId)} className="w-full sm:w-auto">
+              {transferMillMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Transfer site data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div></div>
   );
 }

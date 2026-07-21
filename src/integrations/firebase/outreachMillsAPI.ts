@@ -24,6 +24,7 @@ export interface OutreachMill {
   remarks: OutreachRemark[];
   status?: "Active" | "Working" | "Transferred";
   transferredProjectId?: string;
+  transferredSurveyReportId?: string;
   transferredAt?: string;
   created_at?: string;
   updated_at?: string;
