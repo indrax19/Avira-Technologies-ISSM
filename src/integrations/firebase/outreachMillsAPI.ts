@@ -22,6 +22,7 @@ export interface OutreachMill {
   pocEmail?: string;
   notes?: string;
   remarks: OutreachRemark[];
+  status?: "Active" | "Working" | "Transferred";
   transferredProjectId?: string;
   transferredAt?: string;
   created_at?: string;
