@@ -296,25 +296,24 @@ export default function OutreachMill() {
       <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}><DialogContent className="max-h-[90vh] overflow-y-auto border-slate-200 p-0 shadow-2xl sm:max-w-3xl"><DialogHeader className="border-b border-slate-100 bg-slate-50/70 px-6 py-5"><DialogTitle className="text-xl text-slate-950">{editingMill ? "Edit outreach mill" : "Add outreach mill"}</DialogTitle><DialogDescription>Save the contact information for this spinning mill.</DialogDescription></DialogHeader><form onSubmit={(event: FormEvent) => { event.preventDefault(); saveMill.mutate(); }} className="space-y-6 px-6 py-6"><div className="grid gap-5 sm:grid-cols-2"><Field label="Spinning Mill *" value={form.spinningMill} onChange={(value) => updateField("spinningMill", value)} /><Field label="City" value={form.city || ""} onChange={(value) => updateField("city", value)} /><Field label="Phone" value={form.phone || ""} onChange={(value) => updateField("phone", value)} /><Field label="Email" type="email" value={form.email || ""} onChange={(value) => updateField("email", value)} /><Field label="POC Name" value={form.pocName || ""} onChange={(value) => updateField("pocName", value)} /><Field label="POC Number" value={form.pocNumber || ""} onChange={(value) => updateField("pocNumber", value)} /><Field label="POC Email" type="email" value={form.pocEmail || ""} onChange={(value) => updateField("pocEmail", value)} /><div className="sm:col-span-2"><Label>Address</Label><Textarea value={form.address || ""} onChange={(event) => updateField("address", event.target.value)} className="mt-2" /></div><div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes || ""} onChange={(event) => updateField("notes", event.target.value)} className="mt-2" /></div></div><DialogFooter className="border-t border-slate-100 pt-5"><Button type="button" variant="outline" onClick={closeForm}>Cancel</Button><Button type="submit" disabled={saveMill.isPending}>{saveMill.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editingMill ? "Save changes" : "Save mill"}</Button></DialogFooter></form></DialogContent></Dialog>
 
       <Dialog open={!!remarksMill} onOpenChange={(open) => !open && setRemarksMill(null)}>
-        <DialogContent className="max-w-2xl border-slate-200 shadow-2xl">
-          <DialogHeader className="border-b border-slate-100 pb-4">
-            <DialogTitle className="text-xl text-slate-950">Follow-up Remarks</DialogTitle>
-            <DialogDescription className="text-base font-semibold text-slate-700 mt-2">{remarksMill?.spinningMill}</DialogDescription>
-            <p className="text-xs text-slate-500 mt-1">{remarksMill?.remarks?.length || 0} remarks in history</p>
+        <DialogContent className="w-[calc(100%-1rem)] max-h-[90vh] overflow-y-auto border-slate-200 p-0 shadow-2xl sm:w-full sm:max-w-2xl">
+          <DialogHeader className="border-b border-slate-100 bg-slate-50/70 px-4 py-4 pr-12 sm:px-6 sm:py-5">
+            <DialogTitle className="text-lg text-slate-950 sm:text-xl">Follow-up Remarks</DialogTitle>
+            <DialogDescription className="mt-2 break-words text-sm font-semibold text-slate-700 sm:text-base">{remarksMill?.spinningMill}</DialogDescription>
+            <p className="mt-1 text-xs text-slate-500">{remarksMill?.remarks?.length || 0} remarks in history</p>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Remarks List Section */}
-            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">History</h3>
-              <div className="max-h-72 overflow-y-auto space-y-3 pr-2">
+          <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 sm:p-4">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">History</h3>
+              <div className="max-h-56 space-y-3 overflow-y-auto pr-1 sm:max-h-72 sm:pr-2">
                 {remarksMill?.remarks?.length ? (
                   [...(remarksMill.remarks || [])].reverse().map((remark) => (
-                    <div key={remark.id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 hover:bg-blue-50 transition-colors">
-                      <p className="text-sm text-slate-900 leading-relaxed">{remark.text}</p>
-                      <div className="mt-3 flex items-center justify-between">
+                    <div key={remark.id} className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 transition-colors hover:bg-blue-50 sm:p-4">
+                      <p className="break-words text-sm leading-relaxed text-slate-900">{remark.text}</p>
+                      <div className="mt-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <p className="text-xs text-slate-500">{new Date(remark.createdAt).toLocaleString()}</p>
-                        {remark.createdBy && <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full">{remark.createdBy}</span>}
+                        {remark.createdBy && <span className="max-w-full break-words rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">{remark.createdBy}</span>}
                       </div>
                     </div>
                   ))
@@ -326,7 +325,6 @@ export default function OutreachMill() {
               </div>
             </div>
 
-            {/* Add New Remark Section */}
             <div className="space-y-3 border-t border-slate-200 pt-4">
               <label className="block text-sm font-semibold text-slate-900">Add Remark</label>
               <Textarea
@@ -339,14 +337,14 @@ export default function OutreachMill() {
             </div>
           </div>
 
-          <DialogFooter className="border-t border-slate-100 mt-4 pt-4">
-            <Button variant="outline" onClick={() => setRemarksMill(null)} className="border-slate-300">
+          <DialogFooter className="mt-0 flex-col-reverse gap-2 border-t border-slate-100 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
+            <Button variant="outline" onClick={() => setRemarksMill(null)} className="w-full border-slate-300 sm:w-auto">
               Close
             </Button>
             <Button
               onClick={() => addRemark.mutate()}
               disabled={addRemark.isPending || !remarkText.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto"
             >
               {addRemark.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Remark
