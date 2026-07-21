@@ -14,6 +14,8 @@ import { useAuth } from "@/context/AuthContext";
 import { outreachMillsAPI, type OutreachMill, type OutreachRemark } from "@/integrations/firebase/outreachMillsAPI";
 import { parentProjectsAPI, type ParentProject } from "@/integrations/firebase/parentProjectsAPI";
 import { projectTrackingAPI } from "@/integrations/firebase/projectTrackingAPI";
+import { textileSurveyReportAPI } from "@/integrations/firebase/siteSurveyReportAPI";
+import { defaultTextileData } from "@/components/SurveyTemplates/SurveyTemplateBase";
 
 const emptyMill = (): Omit<OutreachMill, "id" | "created_at" | "updated_at"> => ({
   spinningMill: "",
@@ -49,6 +51,7 @@ export default function OutreachMill() {
   const [remarksMill, setRemarksMill] = useState<OutreachMill | null>(null);
   const [remarkText, setRemarkText] = useState("");
   const [transferMill, setTransferMill] = useState<OutreachMill | null>(null);
+  const [transferDestination, setTransferDestination] = useState<"project-tracking" | "survey-reports">("project-tracking");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const uploadRef = useRef<HTMLInputElement>(null);
 
@@ -91,8 +94,31 @@ export default function OutreachMill() {
 
   const transferMillMutation = useMutation({
     mutationFn: async () => {
-      if (!transferMill?.id || !selectedProjectId) throw new Error("Select a project category");
-      const today = new Date().toISOString().slice(0, 10);
+      if (!transferMill?.id) throw new Error("Select a mill to transfer");
+      const now = new Date().toISOString();
+
+      if (transferDestination === "survey-reports") {
+        const report = await textileSurveyReportAPI.create({
+          ...defaultTextileData,
+          millName: transferMill.spinningMill,
+          unitName: transferMill.unit || "Not specified",
+          fullAddress: [transferMill.address, transferMill.city].filter(Boolean).join(", "),
+          surveyDate: now.slice(0, 10),
+          surveyedByName: appUser?.fullName || "",
+          millContactPerson: transferMill.pocName || "Not specified",
+          millContactNumber: transferMill.pocNumber || transferMill.phone || transferMill.email || "Not specified",
+          generalRemarks: transferMill.notes || "",
+        });
+        await outreachMillsAPI.update(transferMill.id, {
+          status: "Transferred",
+          transferredSurveyReportId: report.id,
+          transferredAt: now,
+        });
+        return "Survey Reports";
+      }
+
+      if (!selectedProjectId) throw new Error("Select a project category");
+      const today = now.slice(0, 10);
       await projectTrackingAPI.create({
         project_id: selectedProjectId,
         millName: transferMill.spinningMill,
@@ -114,12 +140,14 @@ export default function OutreachMill() {
         hardwareStatus: "",
         hardwareDeliveryStatus: "Pending Dispatch",
       });
-      await outreachMillsAPI.update(transferMill.id, { status: "Transferred", transferredProjectId: selectedProjectId, transferredAt: new Date().toISOString() });
+      await outreachMillsAPI.update(transferMill.id, { status: "Transferred", transferredProjectId: selectedProjectId, transferredAt: now });
+      return "Project Tracking";
     },
-    onSuccess: () => {
-      toast.success("Mill transferred to Project Tracking");
+    onSuccess: (destination) => {
+      toast.success(`Mill transferred to ${destination}`);
       setTransferMill(null);
       setSelectedProjectId("");
+      setTransferDestination("project-tracking");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -363,7 +391,42 @@ export default function OutreachMill() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!transferMill} onOpenChange={(open) => !open && setTransferMill(null)}><DialogContent><DialogHeader><DialogTitle>Transfer to Project Tracking</DialogTitle><DialogDescription>Select the project category where {transferMill?.spinningMill} should be added.</DialogDescription></DialogHeader><div className="space-y-2"><Label>Available project categories</Label><Select value={selectedProjectId} onValueChange={setSelectedProjectId}><SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger><SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id!}>{project.name} ({project.projectType || "ISSM"})</SelectItem>)}</SelectContent></Select></div><DialogFooter><Button variant="outline" onClick={() => setTransferMill(null)}>Cancel</Button><Button onClick={() => transferMillMutation.mutate()} disabled={transferMillMutation.isPending || !selectedProjectId}>{transferMillMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Transfer mill</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={!!transferMill} onOpenChange={(open) => !open && setTransferMill(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer site data</DialogTitle>
+            <DialogDescription>Choose where {transferMill?.spinningMill} should be transferred.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Transfer destination</Label>
+              <Select value={transferDestination} onValueChange={(value: "project-tracking" | "survey-reports") => setTransferDestination(value)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="project-tracking">Project Tracking</SelectItem>
+                  <SelectItem value="survey-reports">Survey Reports</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {transferDestination === "project-tracking" && (
+              <div className="space-y-2">
+                <Label>Available project categories</Label>
+                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
+                  <SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id!}>{project.name} ({project.projectType || "ISSM"})</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            {transferDestination === "survey-reports" && <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">A textile survey report will be created with the mill contact details prefilled.</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransferMill(null)}>Cancel</Button>
+            <Button onClick={() => transferMillMutation.mutate()} disabled={transferMillMutation.isPending || (transferDestination === "project-tracking" && !selectedProjectId)}>
+              {transferMillMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Transfer site data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div></div>
   );
 }
