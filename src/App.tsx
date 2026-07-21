@@ -45,6 +45,7 @@ const SiteSurveyReports = lazy(() => import("@/pages/SiteSurveyReports"));
 const SiteSurveyReport = lazy(() => import("@/pages/SiteSurveyReport"));
 const SurveyReportCategorySelect = lazy(() => import("@/pages/SurveyReportCategorySelect"));
 const TextileSurveyReport = lazy(() => import("@/pages/TextileSurveyReport"));
+const OutreachMill = lazy(() => import("@/pages/OutreachMill"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="/technical-projects/:technicalProjectId/sites/:id" element={<ProtectedRoute requiredPermission="sites"><Suspense fallback={<PageLoader />}><SiteDetailsForm /></Suspense></ProtectedRoute>} />
               <Route path="/certificates/:siteId" element={<ProtectedRoute requiredPermission="sites"><Suspense fallback={<PageLoader />}><DeploymentCertificates /></Suspense></ProtectedRoute>} />
               <Route path="/project-tracking" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectTracking /></Suspense></ProtectedRoute>} />
+              <Route path="/outreach-mill" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><OutreachMill /></Suspense></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><Projects /></Suspense></ProtectedRoute>} />
               <Route path="/projects/:id" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectDetail /></Suspense></ProtectedRoute>} />
               <Route path="/project-sites/new/:projectId" element={<ProtectedRoute requiredPermission="project-tracking"><Suspense fallback={<PageLoader />}><ProjectSiteForm /></Suspense></ProtectedRoute>} />
