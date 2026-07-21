@@ -31,6 +31,8 @@ const emptyMill = (): Omit<OutreachMill, "id" | "created_at" | "updated_at"> => 
 
 const normalizeKey = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
+const getMillStatus = (mill: OutreachMill) => mill.transferredAt ? "Transferred" : mill.status === "Working" ? "Working" : "Active";
+
 const importValue = (row: Record<string, unknown>, names: string[]) => {
   const entry = Object.entries(row).find(([key]) => names.includes(normalizeKey(key)));
   return entry?.[1] == null ? "" : String(entry[1]).trim();
@@ -77,7 +79,7 @@ export default function OutreachMill() {
     mutationFn: async () => {
       if (!remarksMill?.id || !remarkText.trim()) throw new Error("Enter a remark first");
       const nextRemark: OutreachRemark = { id: crypto.randomUUID(), text: remarkText.trim(), createdAt: new Date().toISOString(), createdBy: appUser?.fullName };
-      await outreachMillsAPI.update(remarksMill.id, { remarks: [...(remarksMill.remarks || []), nextRemark] });
+      await outreachMillsAPI.update(remarksMill.id, { remarks: [...(remarksMill.remarks || []), nextRemark], status: "Working" });
     },
     onSuccess: () => {
       toast.success("Remark saved to history");
@@ -112,7 +114,7 @@ export default function OutreachMill() {
         hardwareStatus: "",
         hardwareDeliveryStatus: "Pending Dispatch",
       });
-      await outreachMillsAPI.update(transferMill.id, { transferredProjectId: selectedProjectId, transferredAt: new Date().toISOString() });
+      await outreachMillsAPI.update(transferMill.id, { status: "Transferred", transferredProjectId: selectedProjectId, transferredAt: new Date().toISOString() });
     },
     onSuccess: () => {
       toast.success("Mill transferred to Project Tracking");
@@ -248,7 +250,7 @@ export default function OutreachMill() {
         ? mill.remarks.map((remark) => `${remark.text} (${new Date(remark.createdAt).toLocaleString()})`).join("\n")
         : "—",
       "Remarks Count": mill.remarks?.length || 0,
-      "Status": mill.transferredAt ? "Transferred" : "Active"
+      "Status": getMillStatus(mill)
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
