@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Pencil, Trash2, Eye, ImageIcon } from "lucide-react";
+import { Copy, Download, Pencil, Trash2, Eye, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import type { Challan } from "@/integrations/firebase/challanAPI";
@@ -11,6 +11,7 @@ interface ChallanTableRowOptimizedProps {
   challan: Challan;
   onDownloadPDF: (challan: Challan) => void;
   onDelete: (challanId: string) => void;
+  onDuplicate: (challan: Challan) => void;
   onViewSiteData: (challan: Challan) => void;
 }
 
@@ -18,6 +19,7 @@ export const ChallanTableRowOptimized = memo(function ChallanTableRowOptimized({
   challan,
   onDownloadPDF,
   onDelete,
+  onDuplicate,
   onViewSiteData,
 }: ChallanTableRowOptimizedProps) {
   const navigate = useNavigate();
@@ -83,6 +85,15 @@ export const ChallanTableRowOptimized = memo(function ChallanTableRowOptimized({
             title="Download PDF"
           >
             <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => onDuplicate(challan)}
+            title="Duplicate challan"
+          >
+            <Copy className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"

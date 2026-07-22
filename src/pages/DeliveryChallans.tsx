@@ -188,6 +188,30 @@ export default function DeliveryChallans() {
     deleteMutation.mutate(challanId);
   }, [isAdmin, deleteMutation]);
 
+  const handleDuplicate = useCallback(async (challan: Challan) => {
+    const duplicateData = {
+      ...challan,
+      challanNo: "",
+      equipment: challan.equipment.map((item) => ({
+        ...item,
+        serialNumbers: [...item.serialNumbers],
+        barcodes: [...item.barcodes],
+        itemIds: item.itemIds ? [...item.itemIds] : undefined,
+      })),
+    };
+    delete duplicateData.id;
+    delete duplicateData.created_at;
+    delete duplicateData.updated_at;
+
+    try {
+      await challanAPI.create(duplicateData);
+      queryClient.invalidateQueries({ queryKey: ["challans"] });
+      toast.success("Challan duplicated");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to duplicate challan");
+    }
+  }, [queryClient]);
+
   const handleDownloadPDF = useCallback((challan: Challan) => {
     setSelectedChallan(challan);
     setShowProfileDialog(true);
@@ -353,6 +377,7 @@ export default function DeliveryChallans() {
                           challan={challan}
                           onDownloadPDF={handleDownloadPDF}
                           onDelete={handleDeleteClick}
+                          onDuplicate={handleDuplicate}
                           onViewSiteData={handleViewSiteData}
                         />
                       ))}
