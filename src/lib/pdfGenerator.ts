@@ -21,6 +21,32 @@ const formatCertificateDate = (dateString: string): string => {
   return `${day} ${month} ${year}`;
 };
 
+const equipmentPDFOrder = [
+  "Compute Unit",
+  "GPU Graphic Card",
+  "NVR",
+  "Surveillance Hard Drive (HDD)",
+  "POE Switch",
+  "IP Camera",
+  "LED TV Screen",
+  "UPS - Inverters",
+  "Lithium-Ion Battery",
+  "RACK",
+];
+
+const orderEquipmentForPDF = (equipment: Challan["equipment"]): Challan["equipment"] => {
+  const orderMap = new Map(equipmentPDFOrder.map((name, index) => [name.toLowerCase(), index]));
+
+  return equipment
+    .map((item, index) => ({
+      item,
+      index,
+      order: orderMap.get(item.name.trim().toLowerCase()) ?? equipmentPDFOrder.length,
+    }))
+    .sort((a, b) => a.order - b.order || a.index - b.index)
+    .map(({ item }) => item);
+};
+
 export async function generateChallanPDF(challan: Challan, profileId?: string): Promise<Blob> {
   const doc = new jsPDF({
     orientation: "portrait",
@@ -186,8 +212,9 @@ export async function generateChallanPDF(challan: Challan, profileId?: string): 
   yPosition += 8;
 
   // Equipment table with SR #
+  const orderedEquipment = orderEquipmentForPDF(challan.equipment);
   const equipmentData = await Promise.all(
-    challan.equipment.map(async (eq, index) => {
+    orderedEquipment.map(async (eq, index) => {
       // Fetch sub-category details if available
       let description = "N/A";
       if (eq.subcategory_id) {
@@ -467,7 +494,8 @@ export async function generateSiteDataPDF(challan: Challan, profileId?: string):
   yPosition += 8;
 
   // Equipment table
-  const equipmentData = challan.equipment.map((eq, index) => [
+  const orderedEquipment = orderEquipmentForPDF(challan.equipment);
+  const equipmentData = orderedEquipment.map((eq, index) => [
     (index + 1).toString(),
     eq.name,
     eq.quantity.toString(),

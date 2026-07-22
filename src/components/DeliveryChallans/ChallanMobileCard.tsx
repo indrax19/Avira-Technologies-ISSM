@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Copy, Download, Eye, ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import type { Challan } from "@/integrations/firebase/challanAPI";
@@ -11,6 +11,7 @@ interface ChallanMobileCardProps {
   challan: Challan;
   onDownloadPDF: (challan: Challan) => void;
   onDelete: (challanId: string) => void;
+  onDuplicate: (challan: Challan) => void;
   onViewSiteData: (challan: Challan) => void;
 }
 
@@ -18,6 +19,7 @@ export const ChallanMobileCard = memo(function ChallanMobileCard({
   challan,
   onDownloadPDF,
   onDelete,
+  onDuplicate,
   onViewSiteData,
 }: ChallanMobileCardProps) {
   const navigate = useNavigate();
@@ -106,6 +108,15 @@ export const ChallanMobileCard = memo(function ChallanMobileCard({
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">PDF</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-center gap-1"
+            onClick={() => onDuplicate(challan)}
+          >
+            <Copy className="h-4 w-4" />
+            <span className="hidden sm:inline">Duplicate</span>
           </Button>
           <Button
             variant="outline"
