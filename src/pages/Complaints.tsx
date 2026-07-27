@@ -47,11 +47,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type IssueType = "Camera Disconnected" | "HDMI Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
 
-const issueTypes: IssueType[] = ["Camera Disconnected", "HDMI Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
+const issueTypes: IssueType[] = ["Camera Disconnected", "HDMI Disconnected", "AnyDesk Issue", "Site Offline", "LED OFF", "Internet Issue", "Other"];
 const complaintSubjectOptions = [
   "Camera Disconnected",
   "AnyDesk Issue",
   "Site Offline",
+  "LED OFF",
   "Internet Issue",
   "System Performance Issue",
   "Access or Login Issue",
