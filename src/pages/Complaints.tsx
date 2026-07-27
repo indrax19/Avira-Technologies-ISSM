@@ -543,6 +543,12 @@ export default function Complaints() {
 
       <ComplaintsTable
         complaints={userVisibleComplaints}
+        projects={userAccessibleProjects.flatMap((project) => project.id ? [{ id: project.id, name: project.name }] : [])}
+        sites={allSites.flatMap((site) => (
+          site.id && site.technical_project_id && userAccessibleProjectIds.has(site.technical_project_id)
+            ? [{ id: site.id, name: site.millName || site.siteName || site.id, projectId: site.technical_project_id }]
+            : []
+        ))}
         isLoading={complaintsLoading}
         currentUserId={appUser?.id}
         isAdmin={isAdmin}

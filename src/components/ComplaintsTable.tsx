@@ -3,7 +3,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, Trash2, Loader2, ChevronDown, ChevronRight, X, Info, MessageSquarePlus } from "lucide-react";
 import StatusHistoryPanel from "./StatusHistoryPanel";
@@ -27,6 +26,8 @@ import {
 
 interface ComplaintsTableProps {
   complaints: ComplaintWithDetails[];
+  projects: { id: string; name: string }[];
+  sites: { id: string; name: string; projectId?: string }[];
   isLoading: boolean;
   onStatusUpdateClick?: (complaint: ComplaintWithDetails) => void;
   onFollowUpClick?: (complaint: ComplaintWithDetails) => void;
@@ -71,6 +72,8 @@ const formatCreatedTimeWithTZ = (createdTime: string): string => {
 
 export default function ComplaintsTable({
   complaints,
+  projects,
+  sites,
   isLoading,
   onStatusUpdateClick,
   onFollowUpClick,
@@ -82,7 +85,10 @@ export default function ComplaintsTable({
   const [userMap, setUserMap] = useState<Record<string, User | null>>({});
   const [expandedComplaintId, setExpandedComplaintId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
-  const [siteSearch, setSiteSearch] = useState("");
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [siteFilter, setSiteFilter] = useState("all");
+
+  const availableSites = sites.filter((site) => projectFilter === "all" || site.projectId === projectFilter);
   const [siteDetailsModalOpen, setSiteDetailsModalOpen] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState<string | undefined>();
 
@@ -202,8 +208,11 @@ export default function ComplaintsTable({
       return false;
     }
 
-    // Site name search
-    if (siteSearch && !complaint.siteName?.toLowerCase().includes(siteSearch.toLowerCase())) {
+    if (projectFilter !== "all" && complaint.projectId !== projectFilter) {
+      return false;
+    }
+
+    if (siteFilter !== "all" && complaint.siteId !== siteFilter) {
       return false;
     }
 
@@ -231,50 +240,50 @@ export default function ComplaintsTable({
     <div className="space-y-4">
       {/* Filters */}
       <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-          {/* Status Filter */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-700">Status</label>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Status</SelectItem>
-                {STATUS_OPTIONS.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
+                {STATUS_OPTIONS.map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Site Name Search */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Site Name</label>
-            <Input
-              type="text"
-              placeholder="Search site..."
-              value={siteSearch}
-              onChange={(e) => setSiteSearch(e.target.value)}
-              className="w-full sm:w-48"
-            />
+            <label className="text-sm font-semibold text-gray-700">Project</label>
+            <Select value={projectFilter} onValueChange={(projectId) => {
+              setProjectFilter(projectId);
+              setSiteFilter("all");
+            }}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="All Projects" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Clear Filters Button */}
-          {(statusFilter !== "All" || siteSearch) && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setStatusFilter("All");
-                setSiteSearch("");
-              }}
-              className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 w-full sm:w-auto"
-            >
-              <X className="h-4 w-4" />
-              Clear
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700">Site Name</label>
+            <Select value={siteFilter} onValueChange={setSiteFilter}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="All Sites" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sites</SelectItem>
+                {availableSites.map((site) => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(statusFilter !== "All" || projectFilter !== "all" || siteFilter !== "all") && (
+            <Button size="sm" variant="outline" onClick={() => {
+              setStatusFilter("All");
+              setProjectFilter("all");
+              setSiteFilter("all");
+            }} className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-100">
+              <X className="h-4 w-4" /> Clear
             </Button>
           )}
         </div>
