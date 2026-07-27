@@ -269,7 +269,7 @@ export default function Complaints() {
     counts[site] = (counts[site] || 0) + 1;
     return counts;
   }, {});
-  const problematicSites = Object.entries(siteCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+  const problematicSites = Object.entries(siteCounts).sort(([, a], [, b]) => b - a).slice(0, 8);
   const recentCutoff = new Date();
   recentCutoff.setDate(recentCutoff.getDate() - 7);
   const repeatedIssues = Object.entries(filteredReportRows
