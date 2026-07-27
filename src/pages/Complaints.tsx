@@ -45,13 +45,14 @@ import ComplaintStatusUpdateDialog from "@/components/ComplaintStatusUpdateDialo
 import FollowUpDialog from "@/components/FollowUpDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type IssueType = "Camera Disconnected" | "HDMI Disconnected" | "AnyDesk Issue" | "Site Offline" | "Internet Issue" | "Other";
+type IssueType = "Camera Disconnected" | "HDMI Disconnected" | "AnyDesk Issue" | "Site Offline" | "LED Off" | "Internet Issue" | "Other";
 
-const issueTypes: IssueType[] = ["Camera Disconnected", "HDMI Disconnected", "AnyDesk Issue", "Site Offline", "Internet Issue", "Other"];
+const issueTypes: IssueType[] = ["Camera Disconnected", "HDMI Disconnected", "AnyDesk Issue", "Site Offline", "LED Off", "Internet Issue", "Other"];
 const complaintSubjectOptions = [
   "Camera Disconnected",
   "AnyDesk Issue",
   "Site Offline",
+  "LED Off",
   "Internet Issue",
   "System Performance Issue",
   "Access or Login Issue",
@@ -62,6 +63,7 @@ function getIssueType(complaint: ComplaintWithDetails): IssueType {
   if (text.includes("camera") || text.includes("nvr") || text.includes("cctv")) return "Camera Disconnected";
   if (text.includes("hdmi")) return "HDMI Disconnected";
   if (text.includes("anydesk") || text.includes("remote desktop") || text.includes("rustdesk")) return "AnyDesk Issue";
+  if (text.includes("led off") || text.includes("led is off") || text.includes("led light")) return "LED Off";
   if (text.includes("offline") || text.includes("site down") || text.includes("site is down")) return "Site Offline";
   if (text.includes("internet") || text.includes("network") || text.includes("wifi") || text.includes("wi-fi")) return "Internet Issue";
   return "Other";
@@ -267,7 +269,7 @@ export default function Complaints() {
     counts[site] = (counts[site] || 0) + 1;
     return counts;
   }, {});
-  const problematicSites = Object.entries(siteCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+  const problematicSites = Object.entries(siteCounts).sort(([, a], [, b]) => b - a).slice(0, 8);
   const recentCutoff = new Date();
   recentCutoff.setDate(recentCutoff.getDate() - 7);
   const repeatedIssues = Object.entries(filteredReportRows
@@ -533,16 +535,18 @@ export default function Complaints() {
               {problematicSites.length ? <div className="space-y-3">{problematicSites.map(([site, count], index) => <button type="button" key={site} className="flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-blue-50" onClick={() => setReportDrilldown({ title: `${site} issues`, rows: filteredReportRows.filter(({ complaint }) => (complaint.siteName || "Unknown site") === site).map((row) => row.complaint) })}><span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">{index + 1}</span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{site}</span><span className="text-sm font-semibold text-slate-900">{count} issues</span></button>)}</div> : <p className="text-sm text-slate-500">No sites match the selected filters.</p>}
             </div>
           </div>
-          <div className="min-w-0 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0 text-amber-600" /><h3 className="font-semibold text-amber-900">Repeated issues · last 7 days</h3></div>
-            {repeatedIssues.length ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{repeatedIssues.slice(0, 6).map(([key, count]) => { const [site, type] = key.split("|"); return <div key={key} className="rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm"><p className="font-medium text-slate-800">{site}</p><p className="text-xs text-amber-700">{type} · {count} reports</p></div>; })}</div> : <p className="text-sm text-amber-800">No repeated issues found in the last 7 days.</p>}
-          </div>
         </CardContent>
       </Card>
       )}
 
       <ComplaintsTable
         complaints={userVisibleComplaints}
+        projects={userAccessibleProjects.flatMap((project) => project.id ? [{ id: project.id, name: project.name }] : [])}
+        sites={allSites.flatMap((site) => (
+          site.id && site.technical_project_id && userAccessibleProjectIds.has(site.technical_project_id)
+            ? [{ id: site.id, name: site.millName || site.siteName || site.id, projectId: site.technical_project_id }]
+            : []
+        ))}
         isLoading={complaintsLoading}
         currentUserId={appUser?.id}
         isAdmin={isAdmin}
