@@ -533,10 +533,6 @@ export default function Complaints() {
               {problematicSites.length ? <div className="space-y-3">{problematicSites.map(([site, count], index) => <button type="button" key={site} className="flex w-full items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-blue-50" onClick={() => setReportDrilldown({ title: `${site} issues`, rows: filteredReportRows.filter(({ complaint }) => (complaint.siteName || "Unknown site") === site).map((row) => row.complaint) })}><span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">{index + 1}</span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{site}</span><span className="text-sm font-semibold text-slate-900">{count} issues</span></button>)}</div> : <p className="text-sm text-slate-500">No sites match the selected filters.</p>}
             </div>
           </div>
-          <div className="min-w-0 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0 text-amber-600" /><h3 className="font-semibold text-amber-900">Repeated issues · last 7 days</h3></div>
-            {repeatedIssues.length ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{repeatedIssues.slice(0, 6).map(([key, count]) => { const [site, type] = key.split("|"); return <div key={key} className="rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm"><p className="font-medium text-slate-800">{site}</p><p className="text-xs text-amber-700">{type} · {count} reports</p></div>; })}</div> : <p className="text-sm text-amber-800">No repeated issues found in the last 7 days.</p>}
-          </div>
         </CardContent>
       </Card>
       )}
