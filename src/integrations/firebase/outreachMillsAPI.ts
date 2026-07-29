@@ -22,10 +22,13 @@ export interface OutreachMill {
   pocEmail?: string;
   notes?: string;
   remarks: OutreachRemark[];
-  status?: "Active" | "Working" | "Transferred";
+  status?: "Outreach" | "On Hold" | "Follow Up" | "Pending" | "Closed" | "Close" | "Active" | "Working" | "Transferred";
+  assignedTo?: string;
+  assignedToUserId?: string;
   transferredProjectId?: string;
   transferredSurveyReportId?: string;
   transferredAt?: string;
+  sequence?: number;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
@@ -34,7 +37,7 @@ export interface OutreachMill {
 export const outreachMillsAPI = {
   async create(mill: Omit<OutreachMill, "id" | "created_at" | "updated_at">) {
     const now = new Date().toISOString();
-    const data = removeUndefined({ ...mill, created_at: now, updated_at: now });
+    const data = removeUndefined({ ...mill, sequence: mill.sequence ?? Date.now(), created_at: now, updated_at: now });
     const reference = await addDoc(collection(db, "outreach_mills"), data);
     return { id: reference.id, ...data };
   },
@@ -49,7 +52,7 @@ export const outreachMillsAPI = {
 
   subscribeAll(callback: (mills: OutreachMill[]) => void, onError?: (error: Error) => void): Unsubscribe {
     return onSnapshot(
-      query(collection(db, "outreach_mills"), orderBy("updated_at", "desc")),
+      query(collection(db, "outreach_mills"), orderBy("created_at", "asc")),
       (snapshot) => callback(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })) as OutreachMill[]),
       (error) => {
         if (handleFirestoreError(error)) return;
