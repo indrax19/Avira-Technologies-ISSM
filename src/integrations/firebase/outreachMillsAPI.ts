@@ -28,6 +28,7 @@ export interface OutreachMill {
   transferredProjectId?: string;
   transferredSurveyReportId?: string;
   transferredAt?: string;
+  sequence?: number;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
@@ -36,7 +37,7 @@ export interface OutreachMill {
 export const outreachMillsAPI = {
   async create(mill: Omit<OutreachMill, "id" | "created_at" | "updated_at">) {
     const now = new Date().toISOString();
-    const data = removeUndefined({ ...mill, created_at: now, updated_at: now });
+    const data = removeUndefined({ ...mill, sequence: mill.sequence ?? Date.now(), created_at: now, updated_at: now });
     const reference = await addDoc(collection(db, "outreach_mills"), data);
     return { id: reference.id, ...data };
   },
