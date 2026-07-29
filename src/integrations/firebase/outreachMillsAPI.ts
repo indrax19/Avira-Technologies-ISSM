@@ -51,7 +51,7 @@ export const outreachMillsAPI = {
 
   subscribeAll(callback: (mills: OutreachMill[]) => void, onError?: (error: Error) => void): Unsubscribe {
     return onSnapshot(
-      query(collection(db, "outreach_mills"), orderBy("updated_at", "desc")),
+      query(collection(db, "outreach_mills"), orderBy("created_at", "asc")),
       (snapshot) => callback(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })) as OutreachMill[]),
       (error) => {
         if (handleFirestoreError(error)) return;
