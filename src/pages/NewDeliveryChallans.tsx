@@ -355,7 +355,7 @@ export default function NewDeliveryChallans() {
     (e) => e.category_id && e.subcategory_id
   );
 
-  if (!id) {
+  {
     const autoIssueEquipment = validEquipment.filter((item) =>
       AUTO_ISSUE_EQUIPMENT.has(normalizeEquipmentName(item.name)) ||
       AUTO_ISSUE_EQUIPMENT.has(normalizeEquipmentName(item.manualEquipmentDetails)) ||
@@ -369,6 +369,7 @@ export default function NewDeliveryChallans() {
         validEquipment.flatMap((item) => (item.itemIds || []).filter(Boolean))
       );
       const missingStock: string[] = [];
+      let newlyAssignedCount = 0;
 
       validEquipment = validEquipment.map((equipmentItem) => {
         if (!autoIssueEquipment.includes(equipmentItem)) return equipmentItem;
@@ -386,7 +387,10 @@ export default function NewDeliveryChallans() {
           (!equipmentItem.subcategory_id || item.subcategory_id === equipmentItem.subcategory_id) &&
           (AUTO_ISSUE_EQUIPMENT.has(categoryName) || AUTO_ISSUE_EQUIPMENT.has(subCategoryName) || AUTO_ISSUE_EQUIPMENT.has(equipmentName))
         );
-        const existingCount = (equipmentItem.itemIds || []).filter(Boolean).length;
+        const existingCount = Math.max(
+          (equipmentItem.itemIds || []).filter(Boolean).length,
+          equipmentItem.serialNumbers.filter((serial) => serial.trim()).length
+        );
         const requiredCount = Math.max(0, equipmentItem.quantity - existingCount);
 
         if (matchingItems.length < requiredCount) {
@@ -404,6 +408,7 @@ export default function NewDeliveryChallans() {
           serialNumbers[index] = inventoryItem.serial_number;
           itemIds[index] = inventoryItem.id;
           assignedItemIds.add(inventoryItem.id);
+          newlyAssignedCount += 1;
         }
 
         return { ...equipmentItem, serialNumbers, itemIds };
@@ -413,11 +418,7 @@ export default function NewDeliveryChallans() {
         throw new Error(`Not enough available inventory: ${missingStock.join(", ")}`);
       }
 
-      const autoAssignedCount = validEquipment.reduce(
-        (total, item) => total + (item.itemIds || []).filter(Boolean).length,
-        0
-      );
-      if (autoAssignedCount > 0) {
+      if (newlyAssignedCount > 0) {
         toast.success("Available inventory serials assigned automatically");
       }
     }
