@@ -172,6 +172,7 @@ export default function SiteDetailsForm() {
       setAdditionalDetails(existingSite.additionalDetails || "");
       setHardwareCompleted(existingSite.hardwareCompleted || false);
       setDataCopy(existingSite.dataCopy || false);
+      
       setPatch1Date(existingSite.patch1Date || "");
       setPatch2Date(existingSite.patch2Date || "");
       setCompletionCertificate(existingSite.completionCertificate || false);
