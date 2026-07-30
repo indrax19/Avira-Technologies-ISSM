@@ -18,17 +18,57 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Eye, Edit, Download, Trash2, Copy } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ArrowLeft, Plus, Eye, Edit, Download, Trash2, Copy, CalendarDays, Building2, ClipboardList, Network, Factory, CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { generateSurveyReportPDF, generateTextileSurveyPDF } from "@/lib/surveyPDFGenerator";
 import { companyProfileAPI } from "@/integrations/firebase/firestore";
 
+const DetailField = ({ label, value }: { label: string; value: unknown }) => (
+  <div className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-sm">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+    <p className="mt-1 break-words text-sm font-medium text-slate-900">{String(value || "—")}</p>
+  </div>
+);
+
+const DetailSection = ({
+  title,
+  subtitle,
+  icon: Icon,
+  className,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: React.ElementType;
+  className: string;
+  children: React.ReactNode;
+}) => (
+  <section className={`overflow-hidden rounded-xl border shadow-sm ${className}`}>
+    <div className="flex items-center gap-3 border-b border-black/5 bg-white/40 px-4 py-3">
+      <div className="rounded-lg bg-white/80 p-2 shadow-sm"><Icon className="h-4 w-4" /></div>
+      <div>
+        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-600">{subtitle}</p>}
+      </div>
+    </div>
+    <div className="grid gap-3 p-4 sm:grid-cols-2">{children}</div>
+  </section>
+);
+
 export default function SiteSurveyReports() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
+  const [viewingReport, setViewingReport] = useState<any | null>(null);
 
   const { data: reports, isLoading, refetch } = useQuery({
     queryKey: ["survey-reports"],
@@ -282,6 +322,16 @@ export default function SiteSurveyReports() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setViewingReport(report)}
+                            title="View report details"
+                            aria-label={`View ${report.reportNumber || "survey report"}`}
+                            className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               if (report.category === "textile") {
                                 navigate(`/survey-reports/edit/textile/${report.id}`);
@@ -332,6 +382,131 @@ export default function SiteSurveyReports() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={Boolean(viewingReport)} onOpenChange={(open) => !open && setViewingReport(null)}>
+        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto border-0 bg-slate-50 p-0">
+          {viewingReport && (
+            <>
+              <DialogHeader className="bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-600 px-6 py-6 text-white sm:px-8">
+                <div className="flex flex-wrap items-start justify-between gap-4 pr-6">
+                  <div>
+                    <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-100">
+                      <ClipboardList className="h-4 w-4" /> Survey Report Details
+                    </div>
+                    <DialogTitle className="text-2xl font-bold text-white sm:text-3xl">
+                      {viewingReport.reportNumber || "Survey Report"}
+                    </DialogTitle>
+                    <DialogDescription className="mt-2 text-blue-100">
+                      {viewingReport.category === "textile" ? "Textile / Mill Survey" : viewingReport.surveyType || "General Site Survey"}
+                    </DialogDescription>
+                  </div>
+                  <Badge className="border-white/30 bg-white/15 text-white hover:bg-white/20">
+                    <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+                    {viewingReport.reportDate || viewingReport.surveyDate || "Date not provided"}
+                  </Badge>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-5 p-4 sm:p-8">
+                {viewingReport.category === "textile" ? (
+                  <>
+                    <DetailSection title="Facility Identification" subtitle="Mill and survey contact information" icon={Factory} className="border-blue-200 bg-blue-50">
+                      <DetailField label="Mill / Facility Name" value={viewingReport.millName || viewingReport.clientFacility} />
+                      <DetailField label="Unit Name / Number" value={viewingReport.unitName} />
+                      <DetailField label="Full Address" value={viewingReport.fullAddress} />
+                      <DetailField label="Total Units" value={viewingReport.totalUnits} />
+                      <DetailField label="Surveyed By" value={viewingReport.surveyedByName} />
+                      <DetailField label="Designation" value={viewingReport.surveyedByDesignation} />
+                      <DetailField label="Mill Contact Person" value={viewingReport.millContactPerson || viewingReport.focalPerson} />
+                      <DetailField label="Contact Number" value={viewingReport.millContactNumber || viewingReport.contactNumber} />
+                    </DetailSection>
+
+                    <DetailSection title="Blow Room & Camera Coverage" subtitle="Inventory and entry-point details" icon={Building2} className="border-violet-200 bg-violet-50">
+                      <DetailField label="Total Blow Rooms" value={viewingReport.totalBlowRooms} />
+                      <DetailField label="Total Entry Points" value={viewingReport.totalEntryPoints} />
+                      <div className="sm:col-span-2">
+                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Blow Room Entries</p>
+                        <div className="space-y-2">
+                          {(viewingReport.blowRooms || []).length ? viewingReport.blowRooms.map((room: any, index: number) => (
+                            <div key={room.id || index} className="grid gap-2 rounded-lg border border-violet-100 bg-white p-3 text-sm sm:grid-cols-4">
+                              <DetailField label="Room" value={room.blowRoomNo} />
+                              <DetailField label="Entry Points" value={room.entryPoints} />
+                              <DetailField label="Camera Location" value={room.cameraLocation} />
+                              <DetailField label="Lighting" value={room.lightingCondition} />
+                            </div>
+                          )) : <p className="text-sm text-slate-500">No blow room entries recorded.</p>}
+                        </div>
+                      </div>
+                    </DetailSection>
+
+                    <DetailSection title="Connectivity & Infrastructure" subtitle="Network, power, and equipment readiness" icon={Network} className="border-emerald-200 bg-emerald-50">
+                      <DetailField label="Internet Available" value={viewingReport.internetAvailable ? "Yes" : "No"} />
+                      <DetailField label="Connection Types" value={viewingReport.connectionTypes?.join(", ") || viewingReport.connectionTypesOther} />
+                      <DetailField label="Bandwidth" value={viewingReport.bandwidthOption} />
+                      <DetailField label="Internet Quality" value={viewingReport.internetQuality} />
+                      <DetailField label="ISP Provider" value={viewingReport.ispProviderName} />
+                      <DetailField label="UPS Available" value={viewingReport.upsAvailable ? "Yes" : "No"} />
+                      <DetailField label="UPS Capacity / Backup" value={[viewingReport.upsCapacity, viewingReport.upsBackupTime].filter(Boolean).join(" / ")} />
+                      <DetailField label="GPU / Compute" value={viewingReport.gpuCompute} />
+                      <DetailField label="Camera Socket" value={viewingReport.cameraSocket ? "Available" : "Not available"} />
+                      <DetailField label="Converter Socket" value={viewingReport.converterSocket ? "Available" : "Not available"} />
+                      <DetailField label="Switch Socket" value={viewingReport.switchSocket ? "Available" : "Not available"} />
+                      <DetailField label="Nearest Point Distance" value={viewingReport.distanceToNearestPoint} />
+                    </DetailSection>
+
+                    <DetailSection title="Observations & Sign-off" subtitle="Additional remarks and approvals" icon={CheckCircle2} className="border-amber-200 bg-amber-50">
+                      <DetailField label="Waste Flow" value={viewingReport.wasteFlowOption} />
+                      <DetailField label="Waste Flow Remarks" value={viewingReport.wasteFlowRemarks} />
+                      <DetailField label="General Remarks" value={viewingReport.generalRemarks} />
+                      <DetailField label="Surveyor Signature Date" value={viewingReport.surveyorSignatureDate} />
+                      <DetailField label="Customer Representative" value={viewingReport.customerRepresentativeSignature} />
+                      <DetailField label="Customer Signature Date" value={viewingReport.customerRepresentativeSignatureDate} />
+                    </DetailSection>
+                  </>
+                ) : (
+                  <>
+                    <DetailSection title="Survey Information" subtitle="Client, facility, and report metadata" icon={Building2} className="border-blue-200 bg-blue-50">
+                      <DetailField label="Client / Facility" value={viewingReport.clientFacility} />
+                      <DetailField label="Focal Person" value={viewingReport.focalPerson} />
+                      <DetailField label="Contact Number" value={viewingReport.contactNumber} />
+                      <DetailField label="Project Scope" value={viewingReport.projectScope} />
+                      <DetailField label="Survey Type" value={viewingReport.surveyType} />
+                      <DetailField label="Report Date" value={viewingReport.reportDate} />
+                      <DetailField label="Prepared By" value={viewingReport.preparedBy} />
+                      <div className="sm:col-span-2"><DetailField label="Facility Overview" value={viewingReport.facilityOverview} /></div>
+                    </DetailSection>
+
+                    <DetailSection title="Gate-wise Survey Summary" subtitle="Camera requirements and gate observations" icon={ClipboardList} className="border-violet-200 bg-violet-50">
+                      <div className="sm:col-span-2 space-y-2">
+                        {(viewingReport.gateWiseSummary || []).length ? viewingReport.gateWiseSummary.map((item: any, index: number) => (
+                          <div key={item.id || index} className="grid gap-2 rounded-lg border border-violet-100 bg-white p-3 sm:grid-cols-4">
+                            <DetailField label="Gate" value={item.gateName} />
+                            <DetailField label="Function" value={item.function} />
+                            <DetailField label="Camera Required" value={item.cameraRequired} />
+                            <DetailField label="Notes" value={item.notes} />
+                          </div>
+                        )) : <p className="text-sm text-slate-500">No gate-wise details recorded.</p>}
+                      </div>
+                    </DetailSection>
+
+                    <DetailSection title="Network Cabling Requirements" subtitle="Required items and installation purpose" icon={Network} className="border-emerald-200 bg-emerald-50">
+                      <div className="sm:col-span-2 space-y-2">
+                        {(viewingReport.networkCablingRequirements || []).length ? viewingReport.networkCablingRequirements.map((item: any, index: number) => (
+                          <div key={item.id || index} className="grid gap-2 rounded-lg border border-emerald-100 bg-white p-3 sm:grid-cols-3">
+                            <DetailField label="Item" value={item.item} />
+                            <DetailField label="Quantity" value={item.quantity} />
+                            <DetailField label="Purpose" value={item.purpose} />
+                          </div>
+                        )) : <p className="text-sm text-slate-500">No network cabling requirements recorded.</p>}
+                      </div>
+                    </DetailSection>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

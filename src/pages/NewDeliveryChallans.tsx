@@ -29,6 +29,17 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Download, Camera, X, Upload, FileIcon, Image as ImageIcon, ChevronsUpDown } from "lucide-react";
 
+const AUTO_ISSUE_EQUIPMENT = new Set([
+  "keyboard & mouse",
+  "led monitor screen",
+  "hdmi cables",
+  "power cables pc",
+  "rack cabinet",
+]);
+
+const normalizeEquipmentName = (value?: string) =>
+  value?.toLowerCase().replace(/[\\/-]+/g, " ").replace(/\\s+/g, " ").trim() || "";
+
 export default function NewDeliveryChallans() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -340,9 +351,78 @@ export default function NewDeliveryChallans() {
     }
   }
 
-  const validEquipment = equipmentWithNames.filter(
+  let validEquipment = equipmentWithNames.filter(
     (e) => e.category_id && e.subcategory_id
   );
+
+  {
+    const autoIssueEquipment = validEquipment.filter((item) =>
+      AUTO_ISSUE_EQUIPMENT.has(normalizeEquipmentName(item.name)) ||
+      AUTO_ISSUE_EQUIPMENT.has(normalizeEquipmentName(item.manualEquipmentDetails)) ||
+      AUTO_ISSUE_EQUIPMENT.has(normalizeEquipmentName(categories.find((category) => category.id === item.category_id)?.name)) ||
+      AUTO_ISSUE_EQUIPMENT.has(normalizeEquipmentName(subCategoriesMap[item.category_id]?.find((subCategory) => subCategory.id === item.subcategory_id)?.name))
+    );
+
+    if (autoIssueEquipment.length > 0) {
+      const availableItems = (await inventoryItemsAPI.getAll()).filter((item) => item.status === "in");
+      const assignedItemIds = new Set(
+        validEquipment.flatMap((item) => (item.itemIds || []).filter(Boolean))
+      );
+      const missingStock: string[] = [];
+      let newlyAssignedCount = 0;
+
+      validEquipment = validEquipment.map((equipmentItem) => {
+        if (!autoIssueEquipment.includes(equipmentItem)) return equipmentItem;
+
+        const categoryName = normalizeEquipmentName(
+          categories.find((category) => category.id === equipmentItem.category_id)?.name
+        );
+        const subCategoryName = normalizeEquipmentName(
+          subCategoriesMap[equipmentItem.category_id]?.find((subCategory) => subCategory.id === equipmentItem.subcategory_id)?.name
+        );
+        const equipmentName = normalizeEquipmentName(equipmentItem.name || equipmentItem.manualEquipmentDetails);
+        const matchingItems = availableItems.filter((item) =>
+          !assignedItemIds.has(item.id || "") &&
+          item.category_id === equipmentItem.category_id &&
+          (!equipmentItem.subcategory_id || item.subcategory_id === equipmentItem.subcategory_id) &&
+          (AUTO_ISSUE_EQUIPMENT.has(categoryName) || AUTO_ISSUE_EQUIPMENT.has(subCategoryName) || AUTO_ISSUE_EQUIPMENT.has(equipmentName))
+        );
+        const existingCount = Math.max(
+          (equipmentItem.itemIds || []).filter(Boolean).length,
+          equipmentItem.serialNumbers.filter((serial) => serial.trim()).length
+        );
+        const requiredCount = Math.max(0, equipmentItem.quantity - existingCount);
+
+        if (matchingItems.length < requiredCount) {
+          missingStock.push(`${equipmentItem.name || equipmentItem.manualEquipmentDetails} (available: ${matchingItems.length}, required: ${requiredCount})`);
+          return equipmentItem;
+        }
+
+        const serialNumbers = [...equipmentItem.serialNumbers];
+        const itemIds = [...(equipmentItem.itemIds || [])];
+        let assigned = 0;
+        for (let index = 0; index < equipmentItem.quantity; index += 1) {
+          if (itemIds[index]) continue;
+          const inventoryItem = matchingItems[assigned++];
+          if (!inventoryItem?.id) continue;
+          serialNumbers[index] = inventoryItem.serial_number;
+          itemIds[index] = inventoryItem.id;
+          assignedItemIds.add(inventoryItem.id);
+          newlyAssignedCount += 1;
+        }
+
+        return { ...equipmentItem, serialNumbers, itemIds };
+      });
+
+      if (missingStock.length > 0) {
+        throw new Error(`Not enough available inventory: ${missingStock.join(", ")}`);
+      }
+
+      if (newlyAssignedCount > 0) {
+        toast.success("Available inventory serials assigned automatically");
+      }
+    }
+  }
 
   // ✅ Step 3: Save challan WITH document URL
   const challanData: Challan = {
