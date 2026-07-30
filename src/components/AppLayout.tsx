@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { useLayoutEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -9,7 +10,13 @@ import { useComplaintNotifications } from "@/hooks/useComplaintNotifications";
 
 export function AppLayout() {
   const { logout } = useAuth();
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
   useComplaintNotifications();
+
+  useLayoutEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -45,7 +52,7 @@ export function AppLayout() {
               <span className="hidden sm:inline">Logout</span>
             </Button>
           </header>
-          <main className="flex-1 overflow-auto overflow-x-auto p-2 sm:p-4 md:p-6">
+          <main ref={mainRef} className="flex-1 overflow-auto overflow-x-auto p-2 sm:p-4 md:p-6">
             <Outlet />
           </main>
           <footer className="border-t bg-card py-2 px-2 sm:px-4 md:px-6">
