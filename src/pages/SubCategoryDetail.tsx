@@ -541,7 +541,7 @@ export default function SubCategoryDetail() {
                 <TableRow>
                   <TableHead>Serial Number</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Recipient</TableHead>
+                  <TableHead className="w-[6cm] min-w-[6cm] max-w-[6cm] whitespace-normal break-words">Recipient</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead>Purchase</TableHead>
                   <TableHead>Added</TableHead>
@@ -562,7 +562,7 @@ export default function SubCategoryDetail() {
                         {item.status === "in" ? "✓ In Stock" : "↗ Issued"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="w-[6cm] min-w-[6cm] max-w-[6cm] whitespace-normal break-words text-sm text-muted-foreground">
                       {item.id && recipientMap[item.id] ? (
                         <span className="font-medium">{recipientMap[item.id].name}</span>
                       ) : (

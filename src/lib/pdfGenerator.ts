@@ -252,7 +252,7 @@ export async function generateChallanPDF(challan: Challan, profileId?: string): 
     startY: yPosition,
     head: [["SR #", "Equipment Name", "Description", "Qty", "Serial Numbers"]],
     body: equipmentData,
-    margin: margin,
+    margin: { top: margin, right: margin, bottom: 48, left: margin },
     headStyles: {
       fillColor: [41, 128, 185],
       textColor: [255, 255, 255],
@@ -281,23 +281,34 @@ export async function generateChallanPDF(challan: Challan, profileId?: string): 
     },
   });
 
-  // Add footer and signature to all pages
+  // Add footer to all pages and signatures to the final page
   const totalPages = doc.getNumberOfPages();
+  const footerLineY = pageHeight - 18;
+  const footerY = pageHeight - 12;
+  const signatureLeftX = margin + 8;
+  const signatureRightX = pageWidth / 2 + 8;
+
+  doc.setPage(totalPages);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("On Behalf of ISSM", pageWidth / 4, pageHeight - 42, { align: "center" });
+  doc.text("On Behalf of Mill", (pageWidth * 3) / 4, pageHeight - 42, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Delivered by  ____________________", signatureLeftX, pageHeight - 35);
+  doc.text("Signature  ________________________", signatureLeftX, pageHeight - 27);
+  doc.text("Received by  ____________________", signatureRightX, pageHeight - 35);
+  doc.text("Signature  ________________________", signatureRightX, pageHeight - 27);
+
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
     doc.setPage(pageNum);
-    const footerY = pageHeight - 20;
-    const signatureY = pageHeight - 15;
-
-
-    // Footer content
     doc.setFontSize(8);
     doc.setFont(undefined, "normal");
-
-    // Footer line
+    doc.setTextColor(0, 0, 0);
     doc.setLineWidth(0.3);
-    doc.line(margin, pageHeight - 25, pageWidth - margin, pageHeight - 25);
+    doc.line(margin, footerLineY, pageWidth - margin, footerLineY);
 
-    // Left side - Company info
     if (companyProfile) {
       let footerTextY = footerY;
       doc.text(`${companyProfile.company_name || "Company"}`, margin, footerTextY);
@@ -307,21 +318,13 @@ export async function generateChallanPDF(challan: Challan, profileId?: string): 
       }
     }
 
-    // Center text
     doc.text(
       "This is a system-generated document and does not require a signature.",
       pageWidth / 2,
       footerY,
       { align: "center" }
     );
-
-    // Right side
-    doc.text(
-      `Page ${pageNum} of ${totalPages}`,
-      pageWidth - margin,
-      footerY,
-      { align: "right" }
-    );
+    doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - margin, footerY, { align: "right" });
   };
 
   // Convert to blob
