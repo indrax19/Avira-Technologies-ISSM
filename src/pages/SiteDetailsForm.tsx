@@ -787,7 +787,7 @@ export default function SiteDetailsForm() {
                 type="text"
                 value={cameraPassword}
                 onChange={(e) => setCameraPassword(e.target.value)}
-                placeholder="soniccam786"
+                placeholder="sonicnvr786"
               />
             </div>
           </div>
