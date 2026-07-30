@@ -290,12 +290,13 @@ export async function generateChallanPDF(challan: Challan, profileId?: string): 
 
   doc.setPage(totalPages);
   doc.setFontSize(9);
-  doc.setFont(undefined, "normal");
   doc.setTextColor(0, 0, 0);
-  doc.text("On Behalf of ISSM", signatureLeftX, pageHeight - 42);
+  doc.setFont(undefined, "bold");
+  doc.text("On Behalf of ISSM", pageWidth / 4, pageHeight - 42, { align: "center" });
+  doc.text("On Behalf of Mill", (pageWidth * 3) / 4, pageHeight - 42, { align: "center" });
+  doc.setFont(undefined, "normal");
   doc.text("Delivered by  ____________________", signatureLeftX, pageHeight - 35);
   doc.text("Signature  ________________________", signatureLeftX, pageHeight - 27);
-  doc.text("On Behalf of Mill", signatureRightX, pageHeight - 42);
   doc.text("Received by  ____________________", signatureRightX, pageHeight - 35);
   doc.text("Signature  ________________________", signatureRightX, pageHeight - 27);
 
