@@ -28,6 +28,7 @@ const navItems = [
   { title: "Support Tickets", url: "/complaints", icon: AlertCircle, permission: "complaints" },
   { title: "Projects Tracking", url: "/projects", icon: CheckSquare, permission: "project-tracking" },
   { title: "Outreach Mill", url: "/outreach-mill", icon: Building2, permission: "outreach-mill" },
+  { title: "Customer Data", url: "/customer-data", icon: Users, permission: "customer-data" },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
   { title: "Reports", url: "/reports", icon: FileText, permission: "reports" },
   { title: "Survey Reports", url: "/survey-reports", icon: ClipboardList, permission: "survey-reports" },
