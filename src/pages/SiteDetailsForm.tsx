@@ -167,7 +167,7 @@ export default function SiteDetailsForm() {
       setNvrUsername(existingSite.nvrUsername || "admin");
       setNvrPassword(existingSite.nvrPassword || "sonicnvr786");
       setCameraUsername(existingSite.cameraUsername || "admin");
-      setCameraPassword(existingSite.cameraPassword || "soniccam786");
+      setCameraPassword(existingSite.cameraPassword || "sonicnvr786");
       setCameras(existingSite.cameras || []);
       setAdditionalDetails(existingSite.additionalDetails || "");
       setHardwareCompleted(existingSite.hardwareCompleted || false);
