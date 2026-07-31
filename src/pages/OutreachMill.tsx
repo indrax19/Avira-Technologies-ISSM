@@ -18,12 +18,12 @@ import { projectTrackingAPI } from "@/integrations/firebase/projectTrackingAPI";
 import { textileSurveyReportAPI } from "@/integrations/firebase/siteSurveyReportAPI";
 import { defaultTextileData } from "@/components/SurveyTemplates/SurveyTemplateBase";
 
-const statuses = ["Outreach", "Working", "On Hold", "Follow Up", "Closed"] as const;
+const statuses = ["Outreach", "Working", "On Hold", "Follow Up", "Data Not Found", "APTMA", "Closed"] as const;
 const emptyMill = (): Omit<OutreachMill, "id" | "created_at" | "updated_at"> => ({ spinningMill: "", unit: "", city: "", address: "", phone: "", email: "", pocName: "", pocNumber: "", pocEmail: "", notes: "", remarks: [], status: "Outreach", assignedTo: "", assignedToUserId: "" });
 const normalizeKey = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 const getMillStatus = (mill: OutreachMill) => mill.transferredAt ? "Transferred" : mill.status === "Active" || mill.status === "Pending" || !mill.status ? "Outreach" : mill.status === "Close" ? "Closed" : mill.status;
 const importValue = (row: Record<string, unknown>, names: string[]) => Object.entries(row).find(([key]) => names.includes(normalizeKey(key)))?.[1] == null ? "" : String(Object.entries(row).find(([key]) => names.includes(normalizeKey(key)))?.[1]).trim();
-const statusClass = (status: string) => ({ Outreach: "border-violet-200 bg-violet-50 text-violet-700", Working: "border-blue-200 bg-blue-50 text-blue-700", "On Hold": "border-amber-200 bg-amber-50 text-amber-700", "Follow Up": "border-emerald-200 bg-emerald-50 text-emerald-700", Closed: "border-red-200 bg-red-100 text-red-800" }[status] || "border-slate-200 bg-slate-50 text-slate-700");
+const statusClass = (status: string) => ({ Outreach: "border-violet-200 bg-violet-50 text-violet-700", Working: "border-blue-200 bg-blue-50 text-blue-700", "On Hold": "border-amber-200 bg-amber-50 text-amber-700", "Follow Up": "border-emerald-200 bg-emerald-50 text-emerald-700", "Data Not Found": "border-orange-200 bg-orange-50 text-orange-700", APTMA: "border-cyan-200 bg-cyan-50 text-cyan-700", Closed: "border-red-200 bg-red-100 text-red-800" }[status] || "border-slate-200 bg-slate-50 text-slate-700");
 const getSequence = (mill: OutreachMill) => mill.sequence ?? (mill.created_at ? Date.parse(mill.created_at) : Number.MAX_SAFE_INTEGER);
 
 export default function OutreachMill() {
@@ -71,7 +71,28 @@ export default function OutreachMill() {
     onError: (error: Error) => toast.error(error.message),
   });
   const updateStatus = useMutation({ mutationFn: ({ id, status }: { id: string; status: typeof statuses[number] }) => outreachMillsAPI.update(id, { status }), onError: () => toast.error("Unable to update status") });
-  const moveMill = useMutation({ mutationFn: async ({ mill, direction }: { mill: OutreachMill; direction: "up" | "down" }) => { const index = orderedMills.findIndex((entry) => entry.id === mill.id); const neighbor = orderedMills[index + (direction === "up" ? -1 : 1)]; if (!mill.id || !neighbor?.id) return; const currentSequence = getSequence(mill); await outreachMillsAPI.update(mill.id, { sequence: getSequence(neighbor) }); await outreachMillsAPI.update(neighbor.id, { sequence: currentSequence }); }, onError: () => toast.error("Unable to change site sequence") });
+  const moveMill = useMutation({
+    mutationFn: async ({ mill, direction }: { mill: OutreachMill; direction: "up" | "down" }) => {
+      const index = orderedMills.findIndex((entry) => entry.id === mill.id);
+      const neighbor = orderedMills[index + (direction === "up" ? -1 : 1)];
+      if (!mill.id || !neighbor?.id) throw new Error("This mill cannot move further");
+      const currentSequence = getSequence(mill);
+      await Promise.all([
+        outreachMillsAPI.update(mill.id, { sequence: getSequence(neighbor) }),
+        outreachMillsAPI.update(neighbor.id, { sequence: currentSequence }),
+      ]);
+    },
+    onMutate: ({ mill, direction }) => {
+      const index = orderedMills.findIndex((entry) => entry.id === mill.id);
+      const neighbor = orderedMills[index + (direction === "up" ? -1 : 1)];
+      if (!mill.id || !neighbor?.id) return;
+      const currentSequence = getSequence(mill);
+      const neighborSequence = getSequence(neighbor);
+      setMills((current) => current.map((entry) => entry.id === mill.id ? { ...entry, sequence: neighborSequence } : entry.id === neighbor.id ? { ...entry, sequence: currentSequence } : entry));
+    },
+    onSuccess: () => toast.success("Display order updated"),
+    onError: (error: Error) => toast.error(error.message || "Unable to change site sequence"),
+  });
   const addRemark = useMutation({
     mutationFn: async () => {
       if (!remarksMill?.id || !remarkText.trim()) throw new Error("Enter a remark first");
