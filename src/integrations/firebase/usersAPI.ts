@@ -38,6 +38,7 @@ export const AVAILABLE_PERMISSIONS = [
   { id: "sites", label: "Sites Details", description: "Manage site details and locations" },
   { id: "project-tracking", label: "Project Tracking", description: "Track and manage projects" },
   { id: "outreach-mill", label: "Outreach Mill", description: "Manage spinning mill contacts and outreach" },
+  { id: "customer-data", label: "Customer Data", description: "Manage customer contacts and email campaigns" },
   { id: "complaints", label: "Complaints", description: "View and manage complaints & issues" },
   { id: "issue-reporting", label: "Issue Reporting", description: "View issue trends and reporting" },
   { id: "reports", label: "Reports", description: "View and generate reports" },

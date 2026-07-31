@@ -167,11 +167,12 @@ export default function SiteDetailsForm() {
       setNvrUsername(existingSite.nvrUsername || "admin");
       setNvrPassword(existingSite.nvrPassword || "sonicnvr786");
       setCameraUsername(existingSite.cameraUsername || "admin");
-      setCameraPassword(existingSite.cameraPassword || "soniccam786");
+      setCameraPassword(existingSite.cameraPassword || "sonicnvr786");
       setCameras(existingSite.cameras || []);
       setAdditionalDetails(existingSite.additionalDetails || "");
       setHardwareCompleted(existingSite.hardwareCompleted || false);
       setDataCopy(existingSite.dataCopy || false);
+      
       setPatch1Date(existingSite.patch1Date || "");
       setPatch2Date(existingSite.patch2Date || "");
       setCompletionCertificate(existingSite.completionCertificate || false);
@@ -787,7 +788,7 @@ export default function SiteDetailsForm() {
                 type="text"
                 value={cameraPassword}
                 onChange={(e) => setCameraPassword(e.target.value)}
-                placeholder="soniccam786"
+                placeholder="sonicnvr786"
               />
             </div>
           </div>
