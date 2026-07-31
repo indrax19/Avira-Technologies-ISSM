@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -134,9 +136,17 @@
   * {
     @apply border-border;
   }
+  html {
+    font-size: 16px;
+  }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-background font-sans text-foreground;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
   }
 
   /* Hide number input spinners */
