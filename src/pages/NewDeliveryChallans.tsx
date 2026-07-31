@@ -33,6 +33,9 @@ const AUTO_ISSUE_EQUIPMENT = new Set([
   "keyboard & mouse",
   "led monitor screen",
   "hdmi cables",
+  "pdu",
+  "power distribution unit",
+  "power distribution units",
   "power cables pc",
   "rack cabinet",
 ]);
