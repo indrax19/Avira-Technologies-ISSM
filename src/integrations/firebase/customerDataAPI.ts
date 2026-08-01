@@ -21,6 +21,7 @@ export interface CustomerData {
   id?: string;
   customerName: string;
   organization?: string;
+  industry?: string;
   address?: string;
   telephone?: string;
   email?: string;
