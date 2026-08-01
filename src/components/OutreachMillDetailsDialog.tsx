@@ -28,19 +28,31 @@ function getMillStatus(mill: OutreachMill) {
   return mill.transferredAt ? "Transferred" : mill.status === "Active" || mill.status === "Pending" || !mill.status ? "Outreach" : mill.status === "Close" ? "Closed" : mill.status;
 }
 
+function statusClass(status: string) {
+  return ({ Outreach: "border-violet-200 bg-violet-50 text-violet-700", Working: "border-blue-200 bg-blue-50 text-blue-700", "On Hold": "border-amber-200 bg-amber-50 text-amber-700", "Follow Up": "border-emerald-200 bg-emerald-50 text-emerald-700", Closed: "border-red-200 bg-red-50 text-red-700", Transferred: "border-slate-200 bg-slate-100 text-slate-700" } as Record<string, string>)[status] || "border-slate-200 bg-slate-50 text-slate-700";
+}
+
 export default function OutreachMillDetailsDialog({ mill, onClose }: { mill: OutreachMill | null; onClose: () => void }) {
   return (
     <Dialog open={!!mill} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle className="text-xl">{mill?.spinningMill || "Mill details"}</DialogTitle>
-          <DialogDescription>Complete outreach record and follow-up information.</DialogDescription>
+        <DialogHeader className="border-b border-slate-200 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">Outreach record</p>
+              <DialogTitle className="text-2xl tracking-tight text-slate-950">{mill?.spinningMill || "Mill details"}</DialogTitle>
+              <DialogDescription className="mt-1">Complete mill profile, contacts, assignment and follow-up history.</DialogDescription>
+            </div>
+            {mill && <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(getMillStatus(mill))}`}>{getMillStatus(mill)}</span>}
+          </div>
         </DialogHeader>
         {mill && (
           <div className="space-y-5">
             <DetailTable title="Mill information" rows={[["Spinning Mill", mill.spinningMill], ["Unit", mill.unit], ["City", mill.city], ["Address", mill.address]]} />
-            <DetailTable title="Contact information" rows={[["Phone", mill.phone], ["Email", mill.email]]} />
-            <DetailTable title="Point of contact" rows={[["Name", mill.pocName], ["Number", mill.pocNumber], ["Email", mill.pocEmail]]} />
+            <div className="grid gap-5 lg:grid-cols-2">
+              <DetailTable title="Contact information" rows={[["Phone", mill.phone], ["Email", mill.email]]} />
+              <DetailTable title="Point of contact" rows={[["Name", mill.pocName], ["Number", mill.pocNumber], ["Email", mill.pocEmail]]} />
+            </div>
             <DetailTable title="Assignment and status" rows={[["Assigned to", mill.assignedTo], ["Status", getMillStatus(mill)], ["Last updated", mill.updated_at ? new Date(mill.updated_at).toLocaleString() : "—"]]} />
             <DetailTable title="Notes" rows={[["Notes", mill.notes]]} />
             <section className="overflow-hidden rounded-xl border border-slate-200">
